@@ -30,10 +30,20 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
         <li class="nav-item mb-2">
+            <a href="pembayaran.php" class="nav-link fw-semibold py-2 px-3 rounded <?php echo ($currentPage == 'pembayaran.php' || $currentPage == 'tambah_pembayaran.php') ? 'active-menu' : 'text-dark'; ?>">
+                <i class="bi bi-wallet-fill me-2"></i> Transaksi Pembayaran
+            </a>
+        </li>
+        <li class="nav-item mb-2">
             <a href="kelas.php" class="nav-link fw-semibold py-2 px-3 rounded <?php echo ($currentPage == 'kelas.php' || $currentPage == 'tambah_kelas.php' || $currentPage == 'edit_kelas.php') ? 'active-menu' : 'text-dark'; ?>">
                 <i class="bi bi-building me-2"></i> Data Kelas
             </a>
         </li>
+        <li class="nav-item mb-2">
+    <a href="history_siswa.php" class="nav-link fw-semibold py-2 px-3 rounded text-dark">
+        <i class="bi bi-clock-history me-2"></i> History Status Siswa
+    </a>
+</li>
         <li class="nav-item mt-4 pt-3 border-top border-pink-subtle">
             <a href="../../logout.php" class="nav-link text-danger fw-semibold py-2 px-3 rounded"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
         </li>
