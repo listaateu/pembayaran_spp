@@ -1,0 +1,48 @@
+<?php
+session_start();
+if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
+    echo "<script>alert('Silakan login terlebih dahulu!'); window.location='../../login.php';</script>";
+    exit();
+}
+include '../../koneksi.php';
+
+if (isset($_POST['simpan'])) {
+    $nama_kelas = $_POST['nama_kelas'];
+    $kompetensi_keahlian = $_POST['kompetensi_keahlian'];
+
+    $query = mysqli_query($koneksi, "INSERT INTO kelas (nama_kelas, kompetensi_keahlian) VALUES ('$nama_kelas', '$kompetensi_keahlian')");
+    if ($query) {
+        echo "<script>alert('Data kelas berhasil ditambahkan!'); window.location='kelas.php';</script>";
+    } else {
+        echo "<script>alert('Gagal menambah data: " . mysqli_error($koneksi) . "');</script>";
+    }
+}
+
+include '../components/header.php';
+include '../components/sidebar.php';
+?>
+
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h3 fw-bold" style="color: #db2777;">Tambah Data Kelas</h1>
+    </div>
+
+    <div class="card border-0 shadow-sm col-md-12">
+        <div class="card-body">
+            <form method="POST" action="">
+                <div class="mb-3">
+                    <label class="form-label">Nama Kelas</label>
+                    <input type="text" name="nama_kelas" class="form-control" placeholder="Contoh: XII RPL 1" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Kompetensi Keahlian</label>
+                    <input type="text" name="kompetensi_keahlian" class="form-control" placeholder="Contoh: Rekayasa Perangkat Lunak" required>
+                </div>
+                <button type="submit" name="simpan" class="btn btn-primary" style="background-color: #db2777; border-color: #db2777;"><i class="bi bi-save me-1"></i> Simpan Data</button>
+                <a href="kelas.php" class="btn btn-secondary">Kembali</a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<?php include '../components/footer.php'; ?>
