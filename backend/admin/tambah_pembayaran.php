@@ -21,7 +21,7 @@ if (isset($_POST['simpan'])) {
     // Ambil nominal SPP untuk validasi cicilan agar tidak melebihi total tagihan
     $cek_spp = mysqli_query($koneksi, "SELECT nominal FROM spp WHERE id_spp = '$id_spp'");
     $data_spp = mysqli_fetch_assoc($cek_spp);
-    $nominal_spp = $data_spp['nominal'];
+    $nominal_spp = $data_spp['nominal'] ?? 0;
 
     if ($jumlah_bayar > $nominal_spp) {
         echo "<script>alert('Gagal! Jumlah bayar tidak boleh melebihi nominal total SPP (Rp " . number_format($nominal_spp, 0, ',', '.') . ").'); window.location='tambah_pembayaran.php';</script>";
@@ -53,9 +53,10 @@ include '../components/sidebar.php';
                     <select name="nisn" class="form-select" required>
                         <option value="">-- Pilih Siswa --</option>
                         <?php
-                        $siswa = mysqli_query($koneksi, "SELECT siswa.*, kelas.nama_kelas FROM siswa JOIN kelas ON siswa.id_kelas = kelas.id_kelas");
+                        // Menggunakan tingkat dan jurusan (sesuaikan jika kolom database kelas kamu berbeda)
+                        $siswa = mysqli_query($koneksi, "SELECT siswa.*, kelas.tingkat, kelas.jurusan FROM siswa JOIN kelas ON siswa.id_kelas = kelas.id_kelas");
                         while ($s = mysqli_fetch_assoc($siswa)) {
-                            echo "<option value='{$s['nisn']}'>{$s['nisn']} - {$s['nama']} ({$s['nama_kelas']})</option>";
+                            echo "<option value='{$s['nisn']}'>{$s['nisn']} - {$s['nama']} ({$s['tingkat']} {$s['jurusan']})</option>";
                         }
                         ?>
                     </select>

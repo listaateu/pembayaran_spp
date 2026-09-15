@@ -1,51 +1,71 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
+if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
+    echo "<script>alert('Silakan login terlebih dahulu!'); window.location='../../login.php';</script>";
+    exit();
+}
+
 include '../../koneksi.php';
 include '../components/header.php';
 include '../components/sidebar.php';
-
-// Ambil data siswa beserta tahun dan nominal dari tabel spp
-$query_siswa = mysqli_query($koneksi, "SELECT siswa.*, kelas.nama_kelas, spp.tahun, spp.nominal FROM siswa JOIN kelas ON siswa.id_kelas = kelas.id_kelas JOIN spp ON siswa.id_spp = spp.id_spp");
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-    <div class="pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h3 fw-bold mb-3" style="color: #db2777;">History & Status Pembayaran Per Siswa</h1>
-        <p class="text-muted">Pilih siswa di bawah untuk melihat rincian status pelunasan SPP selama 12 bulan.</p>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <h1 class="h3 fw-bold" style="color: #db2777;">History Status Pembayaran Siswa</h1>
     </div>
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
+                <table class="table table-striped table-hover align-middle">
+                    <thead style="background-color: #fdf2f8; color: #db2777;">
                         <tr>
                             <th>No</th>
+                            <th>Nama Petugas</th>
                             <th>NISN</th>
                             <th>Nama Siswa</th>
                             <th>Kelas</th>
-                            <th>Tahun & Tagihan SPP/Bulan</th>
-                            <th class="text-center">Aksi</th>
+                            <th>Tgl Bayar</th>
+                            <th>Bulan & Tahun Dibayar</th>
+                            <th>Nominal Terbayar</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
                         $no = 1;
-                        while ($s = mysqli_fetch_assoc($query_siswa)) {
+                        $query = mysqli_query($koneksi, "
+                            SELECT pembayaran.*, petugas.nama_petugas, siswa.nama, kelas.tingkat, kelas.jurusan, spp.nominal 
+                            FROM pembayaran 
+                            JOIN petugas ON pembayaran.id_petugas = petugas.id_petugas 
+                            JOIN siswa ON pembayaran.nisn = siswa.nisn 
+                            JOIN kelas ON siswa.id_kelas = kelas.id_kelas 
+                            JOIN spp ON siswa.id_spp = spp.id_spp 
+                            ORDER BY pembayaran.tgl_bayar DESC
+                        ");
+                        
+                        if ($query && mysqli_num_rows($query) > 0) {
+                            while ($row = mysqli_fetch_assoc($query)) {
+                                ?>
+                                <tr>
+                                    <td><?= $no++; ?></td>
+                                    <td><?= $row['nama_petugas']; ?></td>
+                                    <td><?= $row['nisn']; ?></td>
+                                    <td><?= $row['nama']; ?></td>
+                                    <td><?= $row['tingkat'] . ' ' . $row['jurusan']; ?></td>
+                                    <td><?= $row['tgl_bayar']; ?></td>
+                                    <td><?= $row['bulan_dibayar'] . ' ' . $row['tahun_dibayar']; ?></td>
+                                    <td>Rp <?= number_format($row['jumlah_bayar'], 0, ',', '.'); ?></td>
+                                </tr>
+                                <?php
+                            }
+                        } else {
+                            echo "<tr><td colspan='8' class='text-center py-3 text-muted'>Belum ada history atau riwayat pembayaran siswa.</td></tr>";
+                        }
                         ?>
-                        <tr>
-                            <td><?php echo $no++; ?></td>
-                            <td><strong><?php echo $s['nisn']; ?></strong></td>
-                            <td><?php echo $s['nama']; ?></td>
-                            <td><?php echo $s['nama_kelas']; ?></td>
-                            <td><span class="badge bg-light text-dark border px-2 py-1">Tahun <?php echo $s['tahun']; ?></span> - Rp <?php echo number_format($s['nominal'], 0, ',', '.'); ?></td>
-                            <td class="text-center">
-                                <a href="detail_history.php?nisn=<?php echo $s['nisn']; ?>" class="btn btn-sm text-white" style="background-color: #db2777;">
-                                    <i class="bi bi-eye me-1"></i> Cek Status 12 Bulan
-                                </a>
-                            </td>
-                        </tr>
-                        <?php } ?>
                     </tbody>
                 </table>
             </div>

@@ -1,6 +1,12 @@
 <?php
-// Mengambil nama file yang sedang aktif di browser
 $currentPage = basename($_SERVER['PHP_SELF']);
+
+// SESUAIKAN DENGAN KENYATAAN DATABASE KAMU:
+// Berdasarkan screenshot, ID 1 isinya kelas 11. 
+// Ganti angka di bawah ini kalau ID untuk 10, 11, dan 12 di database kamu berbeda:
+$id_k10 = 2; // Ganti dengan ID asli Kelas 10 di database kamu
+$id_k11 = 1; // Ganti dengan ID asli Kelas 11 di database kamu (karena ID 1 isinya kelas 11)
+$id_k12 = 3; // Ganti dengan ID asli Kelas 12 di database kamu
 ?>
 
 <!-- Sidebar Modular Active State -->
@@ -14,11 +20,32 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <i class="bi bi-speedometer2 me-2"></i> Dashboard
             </a>
         </li>
+
+        <!-- MENU DATA SISWA DENGAN DROPDOWN SUBMENU KELAS -->
         <li class="nav-item mb-2">
-            <a href="siswa.php" class="nav-link fw-semibold py-2 px-3 rounded <?php echo ($currentPage == 'siswa.php' || $currentPage == 'tambah_siswa.php' || $currentPage == 'edit_siswa.php') ? 'active-menu' : 'text-dark'; ?>">
-                <i class="bi bi-people me-2"></i> Data Siswa
+            <a href="#submenuSiswa" data-bs-toggle="collapse" class="nav-link fw-semibold py-2 px-3 rounded text-dark d-flex justify-content-between align-items-center <?php echo (in_array($currentPage, ['siswa.php', 'tambah_siswa.php', 'edit_siswa.php'])) ? 'active-menu' : ''; ?>">
+                <span><i class="bi bi-people me-2"></i> Data Siswa</span>
+                <i class="bi bi-chevron-down small"></i>
             </a>
+
+            <div class="collapse <?php echo (isset($_GET['id_kelas']) || isset($_GET['tingkat']) || $currentPage == 'siswa.php' || $currentPage == 'tambah_siswa.php' || $currentPage == 'edit_siswa.php') ? 'show' : ''; ?> ps-3 mt-1" id="submenuSiswa">
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-1">
+                        <a href="siswa.php" class="nav-link py-1 px-2 small rounded <?php echo (basename($_SERVER['PHP_SELF']) == 'siswa.php' && !isset($_GET['id_kelas']) && !isset($_GET['tingkat'])) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (!isset($_GET['id_kelas']) && !isset($_GET['tingkat']) && basename($_SERVER['PHP_SELF']) == 'siswa.php') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Semua Siswa</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="siswa.php?id_kelas=<?= $id_k10; ?>" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k10) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k10) ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 10</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="siswa.php?tingkat=11" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 11</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="siswa.php?id_kelas=<?= $id_k12; ?>" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k12) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k12) ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 12</a>
+                    </li>
+                </ul>
+            </div>
         </li>
+
         <li class="nav-item mb-2">
             <a href="petugas.php" class="nav-link fw-semibold py-2 px-3 rounded <?php echo ($currentPage == 'petugas.php') ? 'active-menu' : 'text-dark'; ?>">
                 <i class="bi bi-person-badge me-2"></i> Data Petugas
@@ -34,16 +61,36 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <i class="bi bi-wallet-fill me-2"></i> Transaksi Pembayaran
             </a>
         </li>
+
+        <!-- MENU DATA KELAS -->
         <li class="nav-item mb-2">
-            <a href="kelas.php" class="nav-link fw-semibold py-2 px-3 rounded <?php echo ($currentPage == 'kelas.php' || $currentPage == 'tambah_kelas.php' || $currentPage == 'edit_kelas.php') ? 'active-menu' : 'text-dark'; ?>">
-                <i class="bi bi-building me-2"></i> Data Kelas
+            <a href="#submenuKelas" data-bs-toggle="collapse" class="nav-link fw-semibold py-2 px-3 rounded text-dark d-flex justify-content-between align-items-center <?php echo (in_array($currentPage, ['kelas.php', 'tambah_kelas.php', 'edit_kelas.php'])) ? 'active-menu' : ''; ?>">
+                <span><i class="bi bi-building me-2"></i> Data Kelas</span>
+                <i class="bi bi-chevron-down small"></i>
+            </a>
+            <div class="collapse <?php echo (isset($_GET['tingkat']) && $currentPage == 'kelas.php') ? 'show' : ''; ?> ps-3 mt-1" id="submenuKelas">
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-1">
+                        <a href="kelas.php" class="nav-link py-1 px-2 small rounded <?php echo (basename($_SERVER['PHP_SELF']) == 'kelas.php' && !isset($_GET['tingkat'])) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (!isset($_GET['tingkat']) && basename($_SERVER['PHP_SELF']) == 'kelas.php') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Semua Kelas</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="kelas.php?tingkat=10" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '10') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '10') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Tingkat 10</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="kelas.php?tingkat=11" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Tingkat 11</a>
+                    </li>
+                    <li class="nav-item mb-1">
+                        <a href="kelas.php?tingkat=12" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '12') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '12') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Tingkat 12</a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
+        <li class="nav-item mb-2">
+            <a href="history_siswa.php" class="nav-link fw-semibold py-2 px-3 rounded text-dark <?php echo ($currentPage == 'history_siswa.php') ? 'active-menu' : ''; ?>">
+                <i class="bi bi-clock-history me-2"></i> History Status Siswa
             </a>
         </li>
-        <li class="nav-item mb-2">
-    <a href="history_siswa.php" class="nav-link fw-semibold py-2 px-3 rounded text-dark">
-        <i class="bi bi-clock-history me-2"></i> History Status Siswa
-    </a>
-</li>
         <li class="nav-item mt-4 pt-3 border-top border-pink-subtle">
             <a href="../../logout.php" class="nav-link text-danger fw-semibold py-2 px-3 rounded"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
         </li>
@@ -51,14 +98,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 </nav>
 
 <style>
-    /* Styling khusus untuk menu yang sedang aktif */
     .active-menu {
         background-color: #fbcfe8 !important;
         color: #9d174d !important;
         box-shadow: 0 2px 6px rgba(157, 23, 77, 0.1);
     }
-
-    /* Efek hover lembut pada menu lainnya */
     .sidebar .nav-link:hover:not(.active-menu) {
         background-color: #fce7f3 !important;
         color: #db2777 !important;
