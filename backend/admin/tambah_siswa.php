@@ -12,12 +12,13 @@ if (isset($_POST['simpan'])) {
     $nama = $_POST['nama'];
     $tingkat = $_POST['tingkat'];
     $jurusan = $_POST['jurusan'];
+    $rombel = $_POST['rombel'];
     $alamat = $_POST['alamat'];
     $no_telp = $_POST['no_telp'];
     $id_spp = $_POST['id_spp'];
 
-    if (empty($tingkat) || empty($jurusan)) {
-        echo "<script>alert('Gagal! Tingkat dan Jurusan harus dipilih.'); window.history.back();</script>";
+    if (empty($tingkat) || empty($jurusan) || empty($rombel)) {
+        echo "<script>alert('Gagal! Tingkat, Jurusan, dan Rombel harus dipilih.'); window.history.back();</script>";
         exit();
     }
 
@@ -28,15 +29,17 @@ if (isset($_POST['simpan'])) {
         exit();
     }
 
-    // 2. Cari id_kelas di database secara fleksibel (aman meskipun tulisan di database panjang/singkat)
-    $cari_kelas = mysqli_query($koneksi, "SELECT id_kelas FROM kelas WHERE tingkat = '$tingkat' AND (jurusan = '$jurusan' OR jurusan LIKE '%$jurusan%') LIMIT 1");
+    // 2. Cari id_kelas dengan EXACT MATCH ke tingkat + jurusan + rombel (misal "PPLG 1"),
+    //    supaya siswa masuk ke kelas paralel yang benar, bukan asal comot kelas pertama yang cocok jurusannya.
+    $jurusan_lengkap = "$jurusan $rombel";
+    $cari_kelas = mysqli_query($koneksi, "SELECT id_kelas FROM kelas WHERE tingkat = '$tingkat' AND jurusan = '$jurusan_lengkap' LIMIT 1");
     
     if ($cari_kelas && mysqli_num_rows($cari_kelas) > 0) {
         $data_kelas = mysqli_fetch_assoc($cari_kelas);
         $id_kelas = $data_kelas['id_kelas'];
     } else {
         // Jika belum ada di database, otomatis dibuatkan oleh sistem supaya tidak error
-        $buat_kelas = mysqli_query($koneksi, "INSERT INTO kelas (tingkat, jurusan) VALUES ('$tingkat', '$jurusan')");
+        $buat_kelas = mysqli_query($koneksi, "INSERT INTO kelas (tingkat, jurusan) VALUES ('$tingkat', '$jurusan_lengkap')");
         if ($buat_kelas) {
             $id_kelas = mysqli_insert_id($koneksi);
         } else {
@@ -58,6 +61,12 @@ if (isset($_POST['simpan'])) {
 
 include '../components/header.php';
 include '../components/sidebar.php';
+
+// Kalau datang dari halaman kelas/jurusan tertentu (misal siswa.php?tingkat=11&jurusan=PPLG -> tombol Tambah Siswa),
+// nilai ini dipakai buat otomatis pilih di dropdown supaya user tidak perlu pilih manual lagi.
+$tingkat_terpilih = isset($_GET['tingkat']) ? $_GET['tingkat'] : '';
+$jurusan_terpilih = isset($_GET['jurusan']) ? $_GET['jurusan'] : '';
+$rombel_terpilih = isset($_GET['rombel']) ? $_GET['rombel'] : '';
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -81,27 +90,36 @@ include '../components/sidebar.php';
                     <input type="text" name="nama" class="form-control" required>
                 </div>
                 
-                <!-- DUA KOLOM DENGAN 6 JURUSAN LENGKAP -->
+                <!-- TIGA KOLOM: TINGKAT, JURUSAN, ROMBEL -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Tingkat Kelas</label>
                         <select name="tingkat" class="form-select" required>
                             <option value="">-- Pilih Tingkat --</option>
-                            <option value="10">10</option>
-                            <option value="11">11</option>
-                            <option value="12">12</option>
+                            <option value="10" <?= ($tingkat_terpilih == '10') ? 'selected' : ''; ?>>10</option>
+                            <option value="11" <?= ($tingkat_terpilih == '11') ? 'selected' : ''; ?>>11</option>
+                            <option value="12" <?= ($tingkat_terpilih == '12') ? 'selected' : ''; ?>>12</option>
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Jurusan</label>
                         <select name="jurusan" class="form-select" required>
                             <option value="">-- Pilih Jurusan --</option>
-                            <option value="PPLG">PPLG (Pengembangan Perangkat Lunak dan Gim)</option>
-                            <option value="AKL">AKL (Akuntansi Keuangan Lembaga)</option>
-                            <option value="APHP">APHP (Agribisnis Pengolahan Hasil Pertanian)</option>
-                            <option value="TSM">TSM (Teknik Sepeda Motor)</option>
-                            <option value="TKR">TKR (Teknik Kendaraan Ringan)</option>
-                            <option value="APAT">APAT (Agribisnis Perikanan Air Tawar)</option>
+                            <option value="PPLG" <?= ($jurusan_terpilih == 'PPLG') ? 'selected' : ''; ?>>PPLG (Pengembangan Perangkat Lunak dan Gim)</option>
+                            <option value="AKL" <?= ($jurusan_terpilih == 'AKL') ? 'selected' : ''; ?>>AKL (Akuntansi Keuangan Lembaga)</option>
+                            <option value="APHP" <?= ($jurusan_terpilih == 'APHP') ? 'selected' : ''; ?>>APHP (Agribisnis Pengolahan Hasil Pertanian)</option>
+                            <option value="TSM" <?= ($jurusan_terpilih == 'TSM') ? 'selected' : ''; ?>>TSM (Teknik Sepeda Motor)</option>
+                            <option value="TKR" <?= ($jurusan_terpilih == 'TKR') ? 'selected' : ''; ?>>TKR (Teknik Kendaraan Ringan)</option>
+                            <option value="APAT" <?= ($jurusan_terpilih == 'APAT') ? 'selected' : ''; ?>>APAT (Agribisnis Perikanan Air Tawar)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Rombel</label>
+                        <select name="rombel" class="form-select" required>
+                            <option value="">-- Pilih Rombel --</option>
+                            <option value="1" <?= ($rombel_terpilih == '1') ? 'selected' : ''; ?>>Rombel 1</option>
+                            <option value="2" <?= ($rombel_terpilih == '2') ? 'selected' : ''; ?>>Rombel 2</option>
+                            <option value="3" <?= ($rombel_terpilih == '3') ? 'selected' : ''; ?>>Rombel 3</option>
                         </select>
                     </div>
                 </div>

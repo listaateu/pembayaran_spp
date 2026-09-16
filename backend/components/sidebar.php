@@ -2,10 +2,8 @@
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 // SESUAIKAN DENGAN KENYATAAN DATABASE KAMU:
-// Berdasarkan screenshot, ID 1 isinya kelas 11. 
-// Ganti angka di bawah ini kalau ID untuk 10, 11, dan 12 di database kamu berbeda:
 $id_k10 = 2; // Ganti dengan ID asli Kelas 10 di database kamu
-$id_k11 = 1; // Ganti dengan ID asli Kelas 11 di database kamu (karena ID 1 isinya kelas 11)
+$id_k11 = 1; // Ganti dengan ID asli Kelas 11 di database kamu
 $id_k12 = 3; // Ganti dengan ID asli Kelas 12 di database kamu
 ?>
 
@@ -34,13 +32,13 @@ $id_k12 = 3; // Ganti dengan ID asli Kelas 12 di database kamu
                         <a href="siswa.php" class="nav-link py-1 px-2 small rounded <?php echo (basename($_SERVER['PHP_SELF']) == 'siswa.php' && !isset($_GET['id_kelas']) && !isset($_GET['tingkat'])) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (!isset($_GET['id_kelas']) && !isset($_GET['tingkat']) && basename($_SERVER['PHP_SELF']) == 'siswa.php') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Semua Siswa</a>
                     </li>
                     <li class="nav-item mb-1">
-                        <a href="siswa.php?id_kelas=<?= $id_k10; ?>" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k10) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k10) ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 10</a>
+                        <a href="siswa.php?tingkat=10" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '10') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '10') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 10</a>
                     </li>
                     <li class="nav-item mb-1">
                         <a href="siswa.php?tingkat=11" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '11') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 11</a>
                     </li>
                     <li class="nav-item mb-1">
-                        <a href="siswa.php?id_kelas=<?= $id_k12; ?>" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k12) ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['id_kelas']) && $_GET['id_kelas'] == $id_k12) ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 12</a>
+                        <a href="siswa.php?tingkat=12" class="nav-link py-1 px-2 small rounded <?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '12') ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?php echo (isset($_GET['tingkat']) && $_GET['tingkat'] == '12') ? 'color: #9d174d !important; background-color: #fdf2f8 !important;' : ''; ?>">• Kelas 12</a>
                     </li>
                 </ul>
             </div>

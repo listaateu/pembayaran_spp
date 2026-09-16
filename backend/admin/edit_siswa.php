@@ -21,20 +21,33 @@ if (isset($_POST['update'])) {
     $nama = $_POST['nama'];
     $tingkat = $_POST['tingkat'];
     $jurusan = $_POST['jurusan'];
+    $rombel = $_POST['rombel'];
     $alamat = $_POST['alamat'];
     $no_telp = $_POST['no_telp'];
     $id_spp = $_POST['id_spp'];
 
-    // Cari id_kelas berdasarkan tingkat dan jurusan yang dipilih
-    $cari_kelas = mysqli_query($koneksi, "SELECT id_kelas FROM kelas WHERE tingkat = '$tingkat' AND (jurusan LIKE '%$jurusan%' OR jurusan = '$jurusan') LIMIT 1");
+    if (empty($tingkat) || empty($jurusan) || empty($rombel)) {
+        echo "<script>alert('Gagal! Tingkat, Jurusan, dan Rombel harus dipilih.'); window.history.back();</script>";
+        exit();
+    }
+
+    // Cari id_kelas dengan EXACT MATCH ke tingkat + jurusan + rombel (misal "PPLG 1"),
+    // supaya siswa dipindah ke kelas paralel yang benar, bukan asal comot kelas pertama yang cocok jurusannya.
+    $jurusan_lengkap = "$jurusan $rombel";
+    $cari_kelas = mysqli_query($koneksi, "SELECT id_kelas FROM kelas WHERE tingkat = '$tingkat' AND jurusan = '$jurusan_lengkap' LIMIT 1");
 
     if ($cari_kelas && mysqli_num_rows($cari_kelas) > 0) {
         $data_kelas = mysqli_fetch_assoc($cari_kelas);
         $id_kelas = $data_kelas['id_kelas'];
     } else {
-        $fallback = mysqli_query($koneksi, "SELECT id_kelas FROM kelas LIMIT 1");
-        $data_fb = mysqli_fetch_assoc($fallback);
-        $id_kelas = $data_fb['id_kelas'] ?? 1;
+        // Jika belum ada di database, otomatis dibuatkan oleh sistem supaya tidak error
+        $buat_kelas = mysqli_query($koneksi, "INSERT INTO kelas (tingkat, jurusan) VALUES ('$tingkat', '$jurusan_lengkap')");
+        if ($buat_kelas) {
+            $id_kelas = mysqli_insert_id($koneksi);
+        } else {
+            echo "<script>alert('Gagal memproses kelas: " . mysqli_error($koneksi) . "'); window.history.back();</script>";
+            exit();
+        }
     }
 
     $query = "UPDATE siswa SET nis = '$nis', nama = '$nama', id_kelas = '$id_kelas', alamat = '$alamat', no_telp = '$no_telp', id_spp = '$id_spp' WHERE nisn = '$nisn'";
@@ -48,6 +61,13 @@ if (isset($_POST['update'])) {
 
 include '../components/header.php';
 include '../components/sidebar.php';
+
+// Ambil rombel yang sedang aktif dari data siswa saat ini (misal dari "PPLG 1" -> ambil "1"),
+// supaya dropdown Rombel otomatis kepilih sesuai kondisi siswa sekarang.
+$rombel_sekarang = '';
+if (preg_match('/(\d+)\s*$/', $siswa['nama_jurusan'], $m)) {
+    $rombel_sekarang = $m[1];
+}
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -71,9 +91,9 @@ include '../components/sidebar.php';
                     <input type="text" name="nama" class="form-control" value="<?= $siswa['nama']; ?>" required>
                 </div>
 
-                <!-- Pilihan Tingkat dan Jurusan yang Langsung Terpilih Sesuai Data Asli -->
+                <!-- Pilihan Tingkat, Jurusan, dan Rombel yang otomatis terpilih sesuai data asli -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Tingkat</label>
                         <select name="tingkat" class="form-select" required>
                             <option value="">-- Pilih Tingkat --</option>
@@ -82,16 +102,25 @@ include '../components/sidebar.php';
                             <option value="12" <?= (trim($siswa['tingkat']) == '12') ? 'selected' : ''; ?>>12</option>
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Jurusan</label>
                         <select name="jurusan" class="form-select" required>
                             <option value="">-- Pilih Jurusan --</option>
-                            <option value="PPLG" <?= (stripos($siswa['nama_jurusan'], 'PPLG') !== false || stripos($siswa['nama_jurusan'], 'Perangkat Lunak') !== false) ? 'selected' : ''; ?>>PPLG</option>
-                            <option value="AKL" <?= (stripos($siswa['nama_jurusan'], 'AKL') !== false || stripos($siswa['nama_jurusan'], 'Akuntansi') !== false) ? 'selected' : ''; ?>>AKL</option>
+                            <option value="PPLG" <?= (stripos($siswa['nama_jurusan'], 'PPLG') !== false) ? 'selected' : ''; ?>>PPLG</option>
+                            <option value="AKL" <?= (stripos($siswa['nama_jurusan'], 'AKL') !== false) ? 'selected' : ''; ?>>AKL</option>
                             <option value="APHP" <?= (stripos($siswa['nama_jurusan'], 'APHP') !== false) ? 'selected' : ''; ?>>APHP</option>
                             <option value="TSM" <?= (stripos($siswa['nama_jurusan'], 'TSM') !== false) ? 'selected' : ''; ?>>TSM</option>
                             <option value="TKR" <?= (stripos($siswa['nama_jurusan'], 'TKR') !== false) ? 'selected' : ''; ?>>TKR</option>
                             <option value="APAT" <?= (stripos($siswa['nama_jurusan'], 'APAT') !== false) ? 'selected' : ''; ?>>APAT</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Rombel</label>
+                        <select name="rombel" class="form-select" required>
+                            <option value="">-- Pilih Rombel --</option>
+                            <option value="1" <?= ($rombel_sekarang == '1') ? 'selected' : ''; ?>>Rombel 1</option>
+                            <option value="2" <?= ($rombel_sekarang == '2') ? 'selected' : ''; ?>>Rombel 2</option>
+                            <option value="3" <?= ($rombel_sekarang == '3') ? 'selected' : ''; ?>>Rombel 3</option>
                         </select>
                     </div>
                 </div>
