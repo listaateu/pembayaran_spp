@@ -149,11 +149,11 @@ include '../components/sidebar.php';
 
                         // Query utama dengan ORDER BY nisn DESC agar data terbaru muncul di paling atas
                         $query = mysqli_query($koneksi, "SELECT siswa.*, kelas.tingkat, kelas.jurusan, spp.nominal 
-                                                 FROM siswa 
-                                                 JOIN kelas ON siswa.id_kelas = kelas.id_kelas 
-                                                 JOIN spp ON siswa.id_spp = spp.id_spp 
-                                                 $where 
-                                                 ORDER BY siswa.nisn DESC");
+                                 FROM siswa 
+                                 JOIN kelas ON siswa.id_kelas = kelas.id_kelas 
+                                 JOIN spp ON siswa.id_spp = spp.id_spp 
+                                 $where 
+                                 ORDER BY (siswa.nisn + 0) DESC");
                         
                         if ($query && mysqli_num_rows($query) > 0) {
                             while ($row = mysqli_fetch_assoc($query)) {

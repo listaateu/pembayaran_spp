@@ -37,9 +37,9 @@ function gayaSub($aktif)
                         <a href="siswa.php" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Semua Siswa</a>
                     </li>
                     <?php foreach (['10', '11', '12'] as $t): $aktif = ($currentPage == 'siswa.php' && $tingkatAktif === $t); ?>
-                    <li class="nav-item mb-1">
-                        <a href="siswa.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Kelas <?= $t; ?></a>
-                    </li>
+                        <li class="nav-item mb-1">
+                            <a href="siswa.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Kelas <?= $t; ?></a>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -68,9 +68,9 @@ function gayaSub($aktif)
             <div class="collapse <?= in_array($currentPage, $halamanBayar) ? 'show' : ''; ?> ps-3 mt-1" id="submenuBayar">
                 <ul class="nav flex-column">
                     <?php foreach (['10', '11', '12'] as $t): $aktif = ($currentPage == 'pembayaran.php' && $tingkatAktif === $t); ?>
-                    <li class="nav-item mb-1">
-                        <a href="pembayaran.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Kelas <?= $t; ?></a>
-                    </li>
+                        <li class="nav-item mb-1">
+                            <a href="pembayaran.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Kelas <?= $t; ?></a>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -89,9 +89,9 @@ function gayaSub($aktif)
                         <a href="kelas.php" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Semua Kelas</a>
                     </li>
                     <?php foreach (['10', '11', '12'] as $t): $aktif = ($currentPage == 'kelas.php' && $tingkatAktif === $t); ?>
-                    <li class="nav-item mb-1">
-                        <a href="kelas.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Tingkat <?= $t; ?></a>
-                    </li>
+                        <li class="nav-item mb-1">
+                            <a href="kelas.php?tingkat=<?= $t; ?>" class="nav-link py-1 px-2 small rounded <?= $aktif ? 'fw-bold shadow-sm' : 'text-dark'; ?>" style="<?= gayaSub($aktif); ?>">• Tingkat <?= $t; ?></a>
+                        </li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -100,6 +100,11 @@ function gayaSub($aktif)
         <li class="nav-item mb-2">
             <a href="history_siswa.php" class="nav-link fw-semibold py-2 px-3 rounded <?= ($currentPage == 'history_siswa.php') ? 'active-menu' : 'text-dark'; ?>">
                 <i class="bi bi-clock-history me-2"></i> History Status Siswa
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href="laporan.php" class="nav-link fw-semibold py-2 px-3 rounded <?= ($currentPage == 'laporan.php') ? 'active-menu' : 'text-dark'; ?>">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i> Generate Laporan
             </a>
         </li>
         <li class="nav-item mt-4 pt-3 border-top border-pink-subtle">
@@ -114,6 +119,7 @@ function gayaSub($aktif)
         color: #9d174d !important;
         box-shadow: 0 2px 6px rgba(157, 23, 77, 0.1);
     }
+
     .sidebar .nav-link:hover:not(.active-menu) {
         background-color: #fce7f3 !important;
         color: #db2777 !important;
