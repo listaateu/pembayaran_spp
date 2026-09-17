@@ -6,15 +6,31 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
-if (isset($_POST['simpan'])) {
-    $nama_kelas = $_POST['nama_kelas'];
-    $kompetensi_keahlian = $_POST['kompetensi_keahlian'];
+// Daftar jurusan yang tersedia (sinkron dengan kelas.php & tambah_siswa.php)
+$daftar_jurusan = ['PPLG', 'AKL', 'APHP', 'APAT', 'TKR', 'TSM'];
 
-    $query = mysqli_query($koneksi, "INSERT INTO kelas (nama_kelas, kompetensi_keahlian) VALUES ('$nama_kelas', '$kompetensi_keahlian')");
+// Pre-select dari query string kalau datang dari kelas.php?tingkat=..&jurusan=..
+$tingkat_default = isset($_GET['tingkat']) ? $_GET['tingkat'] : '';
+$jurusan_default = isset($_GET['jurusan']) ? $_GET['jurusan'] : '';
+
+if (isset($_POST['simpan'])) {
+    $tingkat = mysqli_real_escape_string($koneksi, $_POST['tingkat']);
+    $jurusan_kode = mysqli_real_escape_string($koneksi, $_POST['jurusan_kode']);
+    $rombel = mysqli_real_escape_string($koneksi, $_POST['rombel']);
+
+    if (!in_array($tingkat, ['10', '11', '12']) || !in_array($_POST['jurusan_kode'], $daftar_jurusan) || !in_array($rombel, ['1', '2', '3'])) {
+        echo "<script>alert('Data tidak valid. Pastikan Tingkat, Jurusan, dan Rombel terisi dengan benar.'); history.back();</script>";
+        exit();
+    }
+
+    // Format jurusan disimpan gabung dengan nomor rombel, contoh: "PPLG 1"
+    $jurusan = $jurusan_kode . ' ' . $rombel;
+
+    $query = mysqli_query($koneksi, "INSERT INTO kelas (tingkat, jurusan) VALUES ('$tingkat', '$jurusan')");
     if ($query) {
         echo "<script>alert('Data kelas berhasil ditambahkan!'); window.location='kelas.php';</script>";
     } else {
-        echo "<script>alert('Gagal menambah data: " . mysqli_error($koneksi) . "');</script>";
+        echo "<script>alert('Gagal menambah data: " . addslashes(mysqli_error($koneksi)) . "');</script>";
     }
 }
 
@@ -30,13 +46,35 @@ include '../components/sidebar.php';
     <div class="card border-0 shadow-sm col-md-12">
         <div class="card-body">
             <form method="POST" action="">
-                <div class="mb-3">
-                    <label class="form-label">Nama Kelas</label>
-                    <input type="text" name="nama_kelas" class="form-control" placeholder="Contoh: XII RPL 1" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Kompetensi Keahlian</label>
-                    <input type="text" name="kompetensi_keahlian" class="form-control" placeholder="Contoh: Rekayasa Perangkat Lunak" required>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Tingkat</label>
+                        <select name="tingkat" class="form-select" required>
+                            <option value="">Pilih Tingkat</option>
+                            <?php foreach (['10', '11', '12'] as $t): ?>
+                                <option value="<?= $t; ?>" <?= ($tingkat_default === $t) ? 'selected' : ''; ?>><?= $t; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Jurusan</label>
+                        <select name="jurusan_kode" class="form-select" required>
+                            <option value="">Pilih Jurusan</option>
+                            <?php foreach ($daftar_jurusan as $j): ?>
+                                <option value="<?= $j; ?>" <?= ($jurusan_default === $j) ? 'selected' : ''; ?>><?= $j; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Rombel (nomor kelas)</label>
+                        <select name="rombel" class="form-select" required>
+                            <option value="">Pilih Rombel</option>
+                            <?php foreach (['1', '2', '3'] as $r): ?>
+                                <option value="<?= $r; ?>">Rombel <?= $r; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">Jurusan + Rombel akan tersimpan sebagai satu kelas, misal "PPLG 1".</div>
+                    </div>
                 </div>
                 <button type="submit" name="simpan" class="btn btn-primary" style="background-color: #db2777; border-color: #db2777;"><i class="bi bi-save me-1"></i> Simpan Data</button>
                 <a href="kelas.php" class="btn btn-secondary">Kembali</a>

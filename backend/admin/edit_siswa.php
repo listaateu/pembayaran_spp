@@ -6,6 +6,15 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
+// Tahun ajaran = tahun MULAI (misal 2026 artinya tahun ajaran 2026/2027)
+function tahunAjaranDariMasukDanTingkat($tahun_masuk, $tingkat)
+{
+    // Tingkat 10 -> tahun ajaran = tahun_masuk
+    // Tingkat 11 -> tahun ajaran = tahun_masuk + 1
+    // Tingkat 12 -> tahun ajaran = tahun_masuk + 2
+    return (int) $tahun_masuk + ((int) $tingkat - 10);
+}
+
 // Ambil NISN dari URL
 $nisn = $_GET['nisn'] ?? '';
 $data = mysqli_query($koneksi, "SELECT siswa.*, kelas.tingkat, kelas.jurusan as nama_jurusan FROM siswa JOIN kelas ON siswa.id_kelas = kelas.id_kelas WHERE siswa.nisn = '$nisn'");
@@ -22,12 +31,18 @@ if (isset($_POST['update'])) {
     $tingkat = $_POST['tingkat'];
     $jurusan = $_POST['jurusan'];
     $rombel = $_POST['rombel'];
+    $tahun_masuk = $_POST['tahun_masuk'];
     $alamat = $_POST['alamat'];
     $no_telp = $_POST['no_telp'];
     $id_spp = $_POST['id_spp'];
 
     if (empty($tingkat) || empty($jurusan) || empty($rombel)) {
         echo "<script>alert('Gagal! Tingkat, Jurusan, dan Rombel harus dipilih.'); window.history.back();</script>";
+        exit();
+    }
+
+    if (empty($tahun_masuk)) {
+        echo "<script>alert('Gagal! Tahun Masuk (angkatan) harus dipilih.'); window.history.back();</script>";
         exit();
     }
 
@@ -50,9 +65,15 @@ if (isset($_POST['update'])) {
         }
     }
 
-    $query = "UPDATE siswa SET nis = '$nis', nama = '$nama', id_kelas = '$id_kelas', alamat = '$alamat', no_telp = '$no_telp', id_spp = '$id_spp' WHERE nisn = '$nisn'";
+    $query = "UPDATE siswa SET nis = '$nis', nama = '$nama', id_kelas = '$id_kelas', tahun_masuk = '$tahun_masuk', alamat = '$alamat', no_telp = '$no_telp', id_spp = '$id_spp' WHERE nisn = '$nisn'";
 
     if (mysqli_query($koneksi, $query)) {
+        // Catat/perbarui riwayat kelas untuk tahun ajaran hasil kombinasi tingkat + tahun_masuk terbaru
+        $tahun_ajaran_ini = tahunAjaranDariMasukDanTingkat($tahun_masuk, $tingkat);
+        mysqli_query($koneksi, "INSERT INTO riwayat_kelas (nisn, id_kelas, tahun_ajaran)
+                                 VALUES ('$nisn', '$id_kelas', '$tahun_ajaran_ini')
+                                 ON DUPLICATE KEY UPDATE id_kelas = VALUES(id_kelas)");
+
         echo "<script>alert('Data siswa berhasil diubah!'); window.location='siswa.php';</script>";
     } else {
         echo "<script>alert('Gagal mengubah data: " . mysqli_error($koneksi) . "'); window.history.back();</script>";
@@ -67,6 +88,15 @@ include '../components/sidebar.php';
 $rombel_sekarang = '';
 if (preg_match('/(\d+)\s*$/', $siswa['nama_jurusan'], $m)) {
     $rombel_sekarang = $m[1];
+}
+
+$tahun_sekarang = (int) date('Y');
+// Kalau tahun_masuk siswa di luar rentang dropdown default (misal angkatan lama), tetap dimasukkan supaya tidak hilang
+$tahun_masuk_siswa = (int) $siswa['tahun_masuk'];
+$daftar_tahun_masuk = range($tahun_sekarang, $tahun_sekarang - 5);
+if (!in_array($tahun_masuk_siswa, $daftar_tahun_masuk)) {
+    $daftar_tahun_masuk[] = $tahun_masuk_siswa;
+    rsort($daftar_tahun_masuk);
 }
 ?>
 
@@ -122,6 +152,20 @@ if (preg_match('/(\d+)\s*$/', $siswa['nama_jurusan'], $m)) {
                             <option value="2" <?= ($rombel_sekarang == '2') ? 'selected' : ''; ?>>Rombel 2</option>
                             <option value="3" <?= ($rombel_sekarang == '3') ? 'selected' : ''; ?>>Rombel 3</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- TAHUN MASUK (ANGKATAN), terisi sesuai data siswa saat ini -->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Tahun Masuk (Angkatan)</label>
+                        <select name="tahun_masuk" class="form-select" required>
+                            <option value="">-- Pilih Tahun Masuk --</option>
+                            <?php foreach ($daftar_tahun_masuk as $y): ?>
+                                <option value="<?= $y; ?>" <?= ($y == $tahun_masuk_siswa) ? 'selected' : ''; ?>><?= $y; ?>/<?= $y + 1; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="form-text">Lulus (estimasi): <?= $tahun_masuk_siswa + 3; ?>. SPP siswa ini hanya bisa dibayar untuk tahun ajaran <?= $tahun_masuk_siswa; ?>/<?= $tahun_masuk_siswa + 1; ?> s.d. <?= $tahun_masuk_siswa + 2; ?>/<?= $tahun_masuk_siswa + 3; ?>.</div>
                     </div>
                 </div>
 

@@ -11,66 +11,148 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 include '../../koneksi.php';
 include '../components/header.php';
 include '../components/sidebar.php';
+
+/* ============================================================
+   HISTORY STATUS PEMBAYARAN SISWA (versi ringkas per siswa)
+
+   1 baris per siswa, dengan ringkasan:
+   - Berapa bulan yang sudah tercatat dibayar
+   - Tahun ajaran apa saja yang sudah ada transaksinya (format
+     tahun ajaran Indonesia, misal "2024/2025", bukan tahun tunggal)
+   - Tombol "Lihat Detail" -> ke detail_history.php
+
+   Ditambahkan juga kotak pencarian nama/NISN (filter di sisi
+   browser, tanpa reload halaman).
+   ============================================================ */
+
+// Format tahun ajaran ala Indonesia: 2024 -> "2024/2025"
+function formatTA($tahun)
+{
+    $tahun = (int) $tahun;
+    return $tahun . '/' . ($tahun + 1);
+}
+
+$query = mysqli_query($koneksi, "
+    SELECT
+        siswa.nisn,
+        siswa.nama,
+        kelas.tingkat,
+        kelas.jurusan,
+        COUNT(pembayaran.id_pembayaran) AS jumlah_transaksi,
+        GROUP_CONCAT(DISTINCT pembayaran.tahun_dibayar ORDER BY pembayaran.tahun_dibayar SEPARATOR ',') AS tahun_list,
+        MAX(pembayaran.tgl_bayar) AS terakhir_bayar
+    FROM pembayaran
+    JOIN siswa ON pembayaran.nisn = siswa.nisn
+    JOIN kelas ON siswa.id_kelas = kelas.id_kelas
+    GROUP BY siswa.nisn, siswa.nama, kelas.tingkat, kelas.jurusan
+    ORDER BY siswa.nama ASC
+");
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-        <h1 class="h3 fw-bold" style="color: #db2777;">History Status Pembayaran Siswa</h1>
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: #db2777;">History Status Pembayaran Siswa</h1>
+            <p class="text-muted mb-0 small">Cari siswa, lalu klik "Lihat Detail" untuk melihat rincian pembayaran per bulan per tahun ajaran.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <div class="input-group" style="max-width: 380px;">
+                <span class="input-group-text bg-white border-end-0" style="color:#db2777;">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="cari-siswa" class="form-control border-start-0"
+                       placeholder="Cari nama atau NISN..." autocomplete="off">
+            </div>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
+                <table class="table table-hover align-middle mb-0" id="tabel-history">
                     <thead style="background-color: #fdf2f8; color: #db2777;">
                         <tr>
                             <th>No</th>
-                            <th>Nama Petugas</th>
                             <th>NISN</th>
                             <th>Nama Siswa</th>
                             <th>Kelas</th>
-                            <th>Tgl Bayar</th>
-                            <th>Bulan & Tahun Dibayar</th>
-                            <th>Nominal Terbayar</th>
+                            <th>Bulan Tercatat Bayar</th>
+                            <th>Tahun Ajaran</th>
+                            <th>Terakhir Bayar</th>
+                            <th class="text-end">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
                         $no = 1;
-                        $query = mysqli_query($koneksi, "
-                            SELECT pembayaran.*, petugas.nama_petugas, siswa.nama, kelas.tingkat, kelas.jurusan, spp.nominal 
-                            FROM pembayaran 
-                            JOIN petugas ON pembayaran.id_petugas = petugas.id_petugas 
-                            JOIN siswa ON pembayaran.nisn = siswa.nisn 
-                            JOIN kelas ON siswa.id_kelas = kelas.id_kelas 
-                            JOIN spp ON siswa.id_spp = spp.id_spp 
-                            ORDER BY pembayaran.tgl_bayar DESC
-                        ");
-                        
-                        if ($query && mysqli_num_rows($query) > 0) {
-                            while ($row = mysqli_fetch_assoc($query)) {
-                                ?>
-                                <tr>
-                                    <td><?= $no++; ?></td>
-                                    <td><?= $row['nama_petugas']; ?></td>
-                                    <td><?= $row['nisn']; ?></td>
-                                    <td><?= $row['nama']; ?></td>
-                                    <td><?= $row['tingkat'] . ' ' . $row['jurusan']; ?></td>
-                                    <td><?= $row['tgl_bayar']; ?></td>
-                                    <td><?= $row['bulan_dibayar'] . ' ' . $row['tahun_dibayar']; ?></td>
-                                    <td>Rp <?= number_format($row['jumlah_bayar'], 0, ',', '.'); ?></td>
-                                </tr>
-                                <?php
-                            }
-                        } else {
-                            echo "<tr><td colspan='8' class='text-center py-3 text-muted'>Belum ada history atau riwayat pembayaran siswa.</td></tr>";
-                        }
+                        if ($query && mysqli_num_rows($query) > 0):
+                            while ($row = mysqli_fetch_assoc($query)):
+                                $nama_cari = strtolower($row['nama'] . ' ' . $row['nisn']);
+
+                                // "2024,2025" -> "2024/2025, 2025/2026"
+                                $tahun_ajaran_list = '-';
+                                if (!empty($row['tahun_list'])) {
+                                    $tahun_pecah = array_filter(array_map('trim', explode(',', $row['tahun_list'])));
+                                    $tahun_ajaran_list = implode(', ', array_map('formatTA', $tahun_pecah));
+                                }
                         ?>
+                            <tr data-cari="<?= htmlspecialchars($nama_cari); ?>">
+                                <td><?= $no++; ?></td>
+                                <td class="text-muted"><?= htmlspecialchars($row['nisn']); ?></td>
+                                <td class="fw-semibold"><?= htmlspecialchars($row['nama']); ?></td>
+                                <td><?= htmlspecialchars($row['tingkat'] . ' ' . $row['jurusan']); ?></td>
+                                <td>
+                                    <span class="badge bg-success px-3 py-2">
+                                        <?= (int) $row['jumlah_transaksi']; ?> bulan
+                                    </span>
+                                </td>
+                                <td class="text-muted small"><?= htmlspecialchars($tahun_ajaran_list); ?></td>
+                                <td class="text-muted small"><?= htmlspecialchars($row['terakhir_bayar']); ?></td>
+                                <td class="text-end">
+                                    <a href="detail_history.php?nisn=<?= urlencode($row['nisn']); ?>"
+                                       class="btn btn-sm text-white" style="background-color:#db2777;">
+                                        <i class="bi bi-eye me-1"></i> Lihat Detail
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php
+                            endwhile;
+                        else:
+                        ?>
+                            <tr><td colspan="8" class="text-center py-3 text-muted">Belum ada history atau riwayat pembayaran siswa.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <div id="tidak-ditemukan" class="text-center text-muted py-4" style="display:none;">
+                Tidak ada siswa yang cocok dengan pencarian.
             </div>
         </div>
     </div>
 </main>
+
+<script>
+    (function () {
+        var input = document.getElementById('cari-siswa');
+        var baris = document.querySelectorAll('#tabel-history tbody tr[data-cari]');
+        var pesanKosong = document.getElementById('tidak-ditemukan');
+
+        input.addEventListener('input', function () {
+            var kata = this.value.trim().toLowerCase();
+            var adaYangCocok = false;
+
+            baris.forEach(function (tr) {
+                var cocok = tr.dataset.cari.indexOf(kata) !== -1;
+                tr.style.display = cocok ? '' : 'none';
+                if (cocok) adaYangCocok = true;
+            });
+
+            pesanKosong.style.display = (kata !== '' && !adaYangCocok) ? 'block' : 'none';
+        });
+    })();
+</script>
 
 <?php include '../components/footer.php'; ?>

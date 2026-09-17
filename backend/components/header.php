@@ -61,6 +61,28 @@ if (session_status() === PHP_SESSION_NONE) {
             color: #db2777;
             border-bottom: 2px solid #fbcfe8;
         }
+
+        /* Matikan kursor teks & seleksi teks di SELURUH halaman (permintaan guru) */
+        * {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            cursor: default !important;
+        }
+
+        /* Elemen yang memang harus bisa diklik tetap pakai cursor pointer,
+           jangan ikut ke-override jadi cursor default */
+        a, button, .btn, label, select, .form-select, .cek-bulan {
+            cursor: pointer !important;
+        }
+
+        /* Input teks tetap boleh diketik & diseleksi (kalau ada form isian) */
+        input[type="text"], input[type="number"], input[type="password"],
+        input[type="email"], input[type="search"], textarea {
+            user-select: text !important;
+            cursor: text !important;
+        }
     </style>
 </head>
 <body class="bg-light">

@@ -6,6 +6,15 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
+// Tahun ajaran = tahun MULAI (misal 2026 artinya tahun ajaran 2026/2027)
+function tahunAjaranDariMasukDanTingkat($tahun_masuk, $tingkat)
+{
+    // Tingkat 10 -> tahun ajaran = tahun_masuk
+    // Tingkat 11 -> tahun ajaran = tahun_masuk + 1
+    // Tingkat 12 -> tahun ajaran = tahun_masuk + 2
+    return (int) $tahun_masuk + ((int) $tingkat - 10);
+}
+
 if (isset($_POST['simpan'])) {
     $nisn = $_POST['nisn'];
     $nis = $_POST['nis'];
@@ -13,12 +22,18 @@ if (isset($_POST['simpan'])) {
     $tingkat = $_POST['tingkat'];
     $jurusan = $_POST['jurusan'];
     $rombel = $_POST['rombel'];
+    $tahun_masuk = $_POST['tahun_masuk'];
     $alamat = $_POST['alamat'];
     $no_telp = $_POST['no_telp'];
     $id_spp = $_POST['id_spp'];
 
     if (empty($tingkat) || empty($jurusan) || empty($rombel)) {
         echo "<script>alert('Gagal! Tingkat, Jurusan, dan Rombel harus dipilih.'); window.history.back();</script>";
+        exit();
+    }
+
+    if (empty($tahun_masuk)) {
+        echo "<script>alert('Gagal! Tahun Masuk (angkatan) harus dipilih.'); window.history.back();</script>";
         exit();
     }
 
@@ -33,7 +48,7 @@ if (isset($_POST['simpan'])) {
     //    supaya siswa masuk ke kelas paralel yang benar, bukan asal comot kelas pertama yang cocok jurusannya.
     $jurusan_lengkap = "$jurusan $rombel";
     $cari_kelas = mysqli_query($koneksi, "SELECT id_kelas FROM kelas WHERE tingkat = '$tingkat' AND jurusan = '$jurusan_lengkap' LIMIT 1");
-    
+
     if ($cari_kelas && mysqli_num_rows($cari_kelas) > 0) {
         $data_kelas = mysqli_fetch_assoc($cari_kelas);
         $id_kelas = $data_kelas['id_kelas'];
@@ -48,11 +63,17 @@ if (isset($_POST['simpan'])) {
         }
     }
 
-    // 3. Simpan data siswa ke database
-    $query = "INSERT INTO siswa (nisn, nis, nama, id_kelas, alamat, no_telp, id_spp) 
-              VALUES ('$nisn', '$nis', '$nama', '$id_kelas', '$alamat', '$no_telp', '$id_spp')";
+    // 3. Simpan data siswa ke database (sekarang termasuk tahun_masuk)
+    $query = "INSERT INTO siswa (nisn, nis, nama, id_kelas, tahun_masuk, alamat, no_telp, id_spp) 
+              VALUES ('$nisn', '$nis', '$nama', '$id_kelas', '$tahun_masuk', '$alamat', '$no_telp', '$id_spp')";
 
     if (mysqli_query($koneksi, $query)) {
+        // 4. Catat riwayat kelas untuk tahun ajaran siswa ini masuk ke kelas tersebut
+        $tahun_ajaran_ini = tahunAjaranDariMasukDanTingkat($tahun_masuk, $tingkat);
+        mysqli_query($koneksi, "INSERT INTO riwayat_kelas (nisn, id_kelas, tahun_ajaran)
+                                 VALUES ('$nisn', '$id_kelas', '$tahun_ajaran_ini')
+                                 ON DUPLICATE KEY UPDATE id_kelas = VALUES(id_kelas)");
+
         echo "<script>alert('Data siswa berhasil ditambahkan!'); window.location='siswa.php';</script>";
     } else {
         echo "<script>alert('Gagal menambah data: " . mysqli_error($koneksi) . "'); window.history.back();</script>";
@@ -67,6 +88,8 @@ include '../components/sidebar.php';
 $tingkat_terpilih = isset($_GET['tingkat']) ? $_GET['tingkat'] : '';
 $jurusan_terpilih = isset($_GET['jurusan']) ? $_GET['jurusan'] : '';
 $rombel_terpilih = isset($_GET['rombel']) ? $_GET['rombel'] : '';
+
+$tahun_sekarang = (int) date('Y');
 ?>
 
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
@@ -89,12 +112,12 @@ $rombel_terpilih = isset($_GET['rombel']) ? $_GET['rombel'] : '';
                     <label class="form-label">Nama Siswa</label>
                     <input type="text" name="nama" class="form-control" required>
                 </div>
-                
+
                 <!-- TIGA KOLOM: TINGKAT, JURUSAN, ROMBEL -->
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Tingkat Kelas</label>
-                        <select name="tingkat" class="form-select" required>
+                        <select name="tingkat" id="tingkat" class="form-select" required onchange="saranTahunMasuk()">
                             <option value="">-- Pilih Tingkat --</option>
                             <option value="10" <?= ($tingkat_terpilih == '10') ? 'selected' : ''; ?>>10</option>
                             <option value="11" <?= ($tingkat_terpilih == '11') ? 'selected' : ''; ?>>11</option>
@@ -124,6 +147,20 @@ $rombel_terpilih = isset($_GET['rombel']) ? $_GET['rombel'] : '';
                     </div>
                 </div>
 
+                <!-- TAHUN MASUK (ANGKATAN) -->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Tahun Masuk (Angkatan)</label>
+                        <select name="tahun_masuk" id="tahun_masuk" class="form-select" required>
+                            <option value="">-- Pilih Tahun Masuk --</option>
+                            <?php for ($y = $tahun_sekarang; $y >= $tahun_sekarang - 5; $y--): ?>
+                                <option value="<?= $y; ?>"><?= $y; ?>/<?= $y + 1; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                        <div class="form-text">Tahun ajaran saat siswa pertama kali masuk (kelas 10). SPP siswa ini nanti hanya bisa dibayar dari tahun ini sampai 2 tahun ajaran setelahnya (sampai lulus).</div>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">Alamat</label>
                     <textarea name="alamat" class="form-control" rows="3" required></textarea>
@@ -150,5 +187,25 @@ $rombel_terpilih = isset($_GET['rombel']) ? $_GET['rombel'] : '';
         </div>
     </div>
 </main>
+
+<script>
+    // Bantu isi otomatis tahun masuk berdasarkan tingkat yang dipilih (masih bisa diubah manual oleh admin)
+    function saranTahunMasuk() {
+        var tingkat = document.getElementById('tingkat').value;
+        var tahunMasukSelect = document.getElementById('tahun_masuk');
+        if (!tingkat || tahunMasukSelect.value !== '') return; // jangan timpa kalau admin sudah pilih manual
+
+        var tahunSekarang = <?= $tahun_sekarang; ?>;
+        var selisih = { '10': 0, '11': 1, '12': 2 };
+        var saran = tahunSekarang - (selisih[tingkat] || 0);
+
+        for (var i = 0; i < tahunMasukSelect.options.length; i++) {
+            if (tahunMasukSelect.options[i].value == saran) {
+                tahunMasukSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+</script>
 
 <?php include '../components/footer.php'; ?>
