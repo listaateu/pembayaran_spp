@@ -6,8 +6,10 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
-$nisn = $_GET['nisn'];
-$hapus = mysqli_query($koneksi, "DELETE FROM siswa WHERE nisn = '$nisn'");
+$nisn = $_GET['nisn'] ?? '';
+$stmt = mysqli_prepare($koneksi, "DELETE FROM siswa WHERE nisn = ?");
+mysqli_stmt_bind_param($stmt, "s", $nisn);
+$hapus = mysqli_stmt_execute($stmt);
 
 if ($hapus) {
     echo "<script>alert('Data siswa berhasil dihapus!'); window.location='siswa.php';</script>";

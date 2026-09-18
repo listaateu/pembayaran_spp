@@ -6,8 +6,10 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
-$id = $_GET['id'];
-$query = mysqli_query($koneksi, "DELETE FROM spp WHERE id_spp = '$id'");
+$id = (int) ($_GET['id'] ?? 0);
+$stmt = mysqli_prepare($koneksi, "DELETE FROM spp WHERE id_spp = ?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+$query = mysqli_stmt_execute($stmt);
 
 if ($query) {
     echo "<script>alert('Data SPP berhasil dihapus!'); window.location='spp.php';</script>";

@@ -151,7 +151,8 @@ function linkFilter($ubah = [])
         <p class="text-muted mb-0 small">Daftar siswa yang belum lunas SPP. Klik "Bayar" untuk langsung mencatat pembayaran.</p>
     </div>
 
-    <!-- FILTER: Tingkat selalu terkunci dari sidebar (Kelas 10/11/12) -->
+    <?php if ($nisn_pilih === ''): ?>
+    <!-- FILTER: Tingkat selalu terkunci dari sidebar (Kelas 10/11/12). Disembunyikan kalau lagi proses 1 siswa. -->
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body py-3">
             <form method="GET" class="row g-2 align-items-end">
@@ -196,6 +197,7 @@ function linkFilter($ubah = [])
             var selectJurusan = document.getElementById('select-jurusan');
             var selectRombel  = document.getElementById('select-rombel');
             var btnTerapkan   = document.getElementById('btn-terapkan');
+            if (!selectJurusan) return;
 
             function perbaruiKunci() {
                 var sudahIsiJurusan = selectJurusan.value !== '';
@@ -210,6 +212,7 @@ function linkFilter($ubah = [])
             perbaruiKunci(); // jalankan sekali di awal (misal pas reload dengan jurusan sudah kepilih)
         })();
     </script>
+    <?php endif; // nisn_pilih === '' ?>
 
     <?php if (!$sudah_terapkan): ?>
 

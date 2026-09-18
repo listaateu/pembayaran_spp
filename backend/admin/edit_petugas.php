@@ -6,22 +6,37 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 }
 include '../../koneksi.php';
 
-$id = $_GET['id'];
-$query = mysqli_query($koneksi, "SELECT * FROM petugas WHERE id_petugas = '$id'");
-$petugas = mysqli_fetch_assoc($query);
+$id = (int) ($_GET['id'] ?? 0);
+$stmt = mysqli_prepare($koneksi, "SELECT * FROM petugas WHERE id_petugas = ?");
+mysqli_stmt_bind_param($stmt, "i", $id);
+mysqli_stmt_execute($stmt);
+$petugas = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+
+if (!$petugas) {
+    echo "<script>alert('Data petugas tidak ditemukan!'); window.location='petugas.php';</script>";
+    exit();
+}
 
 if (isset($_POST['update_petugas'])) {
-    $username = $_POST['username'];
-    $nama_petugas = $_POST['nama_petugas'];
+    $username = trim($_POST['username']);
+    $nama_petugas = trim($_POST['nama_petugas']);
     $level = $_POST['level'];
 
-    // Jika password diisi, update password juga. Jika kosong, biarkan password lama.
-    if (!empty($_POST['password'])) {
-        $password = md5($_POST['password']);
-        $update = mysqli_query($koneksi, "UPDATE petugas SET username='$username', password='$password', nama_petugas='$nama_petugas', level='$level' WHERE id_petugas='$id'");
-    } else {
-        $update = mysqli_query($koneksi, "UPDATE petugas SET username='$username', nama_petugas='$nama_petugas', level='$level' WHERE id_petugas='$id'");
+    if (!in_array($level, ['admin', 'petugas'], true)) {
+        echo "<script>alert('Level tidak valid!'); window.location='petugas.php';</script>";
+        exit();
     }
+
+    // Jika password diisi, update password juga (di-hash). Jika kosong, biarkan password lama.
+    if (!empty($_POST['password'])) {
+        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        $upd = mysqli_prepare($koneksi, "UPDATE petugas SET username=?, password=?, nama_petugas=?, level=? WHERE id_petugas=?");
+        mysqli_stmt_bind_param($upd, "ssssi", $username, $password, $nama_petugas, $level, $id);
+    } else {
+        $upd = mysqli_prepare($koneksi, "UPDATE petugas SET username=?, nama_petugas=?, level=? WHERE id_petugas=?");
+        mysqli_stmt_bind_param($upd, "sssi", $username, $nama_petugas, $level, $id);
+    }
+    $update = mysqli_stmt_execute($upd);
 
     if ($update) {
         echo "<script>alert('Data petugas berhasil diubah!'); window.location='petugas.php';</script>";
@@ -43,7 +58,7 @@ include '../components/sidebar.php';
         <form method="POST" action="">
             <div class="mb-3">
                 <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" value="<?php echo $petugas['username']; ?>" required>
+                <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($petugas['username']); ?>" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Password Baru <small class="text-muted">(Kosongkan jika tidak ingin mengubah password)</small></label>
@@ -51,7 +66,7 @@ include '../components/sidebar.php';
             </div>
             <div class="mb-3">
                 <label class="form-label">Nama Petugas</label>
-                <input type="text" name="nama_petugas" class="form-control" value="<?php echo $petugas['nama_petugas']; ?>" required>
+                <input type="text" name="nama_petugas" class="form-control" value="<?php echo htmlspecialchars($petugas['nama_petugas']); ?>" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Level</label>

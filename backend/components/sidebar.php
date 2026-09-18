@@ -108,10 +108,29 @@ function gayaSub($aktif)
             </a>
         </li>
         <li class="nav-item mt-4 pt-3 border-top border-pink-subtle">
-            <a href="../../logout.php" class="nav-link text-danger fw-semibold py-2 px-3 rounded"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#modalLogout" class="nav-link text-danger fw-semibold py-2 px-3 rounded"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
         </li>
     </ul>
 </nav>
+
+<!-- Modal Konfirmasi Logout -->
+<div class="modal fade" id="modalLogout" tabindex="-1" aria-labelledby="modalLogoutLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4 p-md-5">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 64px; height: 64px; background-color: #fce7f3; color: #db2777; font-size: 1.75rem;">
+                    <i class="bi bi-box-arrow-right"></i>
+                </div>
+                <h5 class="fw-bold mb-2" style="color: #9d174d;">Yakin mau logout?</h5>
+                <p class="text-muted mb-4">Kamu akan keluar dari sesi ini dan perlu login ulang untuk mengakses dashboard.</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light border px-4 rounded-pill" data-bs-dismiss="modal">Batal</button>
+                    <a href="../../logout.php" class="btn text-white px-4 rounded-pill" style="background-color: #db2777;">Ya, Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
     .active-menu {

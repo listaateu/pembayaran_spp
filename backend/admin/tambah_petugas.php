@@ -7,13 +7,22 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 include '../../koneksi.php';
 
 if (isset($_POST['simpan'])) {
-    $username = $_POST['username'];
-    $password = md5($_POST['password']);
-    $nama_petugas = $_POST['nama_petugas'];
+    $username = trim($_POST['username']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $nama_petugas = trim($_POST['nama_petugas']);
     $level = $_POST['level'];
 
-    $query = mysqli_query($koneksi, "INSERT INTO petugas (username, password, nama_petugas, level) VALUES ('$username', '$password', '$nama_petugas', '$level')");
-    if ($query) {
+    // Batasi level hanya ke nilai yang sah, jangan percaya input mentah
+    if (!in_array($level, ['admin', 'petugas'], true)) {
+        echo "<script>alert('Level tidak valid!'); window.location='petugas.php';</script>";
+        exit();
+    }
+
+    // Prepared statement supaya aman dari SQL Injection
+    $stmt = mysqli_prepare($koneksi, "INSERT INTO petugas (username, password, nama_petugas, level) VALUES (?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, "ssss", $username, $password, $nama_petugas, $level);
+
+    if (mysqli_stmt_execute($stmt)) {
         echo "<script>alert('Data petugas berhasil ditambahkan!'); window.location='petugas.php';</script>";
     } else {
         echo "<script>alert('Gagal menambah petugas: " . mysqli_error($koneksi) . "');</script>";

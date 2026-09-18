@@ -1,9 +1,9 @@
 <?php
-// LETAKKAN FILE INI DI: pembayaran_spp/backend/admin/cetak_pembayaran.php
+// LETAKKAN FILE INI DI: pembayaran_spp/backend/petugas/cetak_pembayaran.php
 // (timpa/replace file yang lama)
 
 session_start();
-if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
+if (!isset($_SESSION['level']) || $_SESSION['level'] != 'petugas') {
     echo "<script>alert('Silakan login terlebih dahulu!'); window.location='../../login.php';</script>";
     exit();
 }
@@ -19,7 +19,7 @@ if (isset($_GET['ids'])) {
 
 $daftar_id = array_filter(array_map('intval', explode(',', $ids_mentah)));
 if (count($daftar_id) === 0) {
-    header("Location: pembayaran.php");
+    header("Location: transaksi.php");
     exit();
 }
 $ids_sql = implode(',', $daftar_id);
@@ -44,7 +44,7 @@ while ($row = mysqli_fetch_assoc($q)) {
 }
 
 if (count($daftar) === 0) {
-    echo "<script>alert('Data pembayaran tidak ditemukan.'); window.location='pembayaran.php';</script>";
+    echo "<script>alert('Data pembayaran tidak ditemukan.'); window.location='transaksi.php';</script>";
     exit();
 }
 
@@ -191,7 +191,7 @@ $satu_transaksi = (count($daftar) === 1);
     const daftarIds = "<?= implode(',', $daftar_id); ?>";
     // URL halaman "Transaksi Pembayaran" (daftar siswa) sesuai kelas siswa ini,
     // supaya abis kirim WA bisa langsung balik ke situ (bukan ke halaman detail lagi)
-    const urlDaftarTransaksi = "pembayaran.php?tingkat=<?= urlencode($d['tingkat']); ?>";
+    const urlDaftarTransaksi = "transaksi.php?tingkat=<?= urlencode($d['tingkat']); ?>";
 
     // Tombol "Kirim ke WhatsApp": sekarang kirim OTOMATIS lewat server (Fonnte),
     // tidak perlu buka WhatsApp lagi.

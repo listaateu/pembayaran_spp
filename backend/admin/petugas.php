@@ -40,8 +40,8 @@ include '../components/sidebar.php';
                         ?>
                             <tr>
                                 <td><?php echo $no++; ?></td>
-                                <td class="fw-semibold"><?php echo $row['username']; ?></td>
-                                <td><?php echo $row['nama_petugas']; ?></td>
+                                <td class="fw-semibold"><?php echo htmlspecialchars($row['username']); ?></td>
+                                <td><?php echo htmlspecialchars($row['nama_petugas']); ?></td>
                                 <td>
                                     <span class="badge <?php echo ($row['level'] == 'admin') ? 'bg-danger' : 'bg-info text-dark'; ?>">
                                         <?php echo ucfirst($row['level']); ?>

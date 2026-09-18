@@ -7,10 +7,12 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
 include '../../koneksi.php';
 
 if (isset($_POST['simpan'])) {
-    $tahun = $_POST['tahun'];
-    $nominal = $_POST['nominal'];
+    $tahun = (int) $_POST['tahun'];
+    $nominal = (int) $_POST['nominal'];
 
-    $query = mysqli_query($koneksi, "INSERT INTO spp (tahun, nominal) VALUES ('$tahun', '$nominal')");
+    $stmt = mysqli_prepare($koneksi, "INSERT INTO spp (tahun, nominal) VALUES (?, ?)");
+    mysqli_stmt_bind_param($stmt, "ii", $tahun, $nominal);
+    $query = mysqli_stmt_execute($stmt);
     if ($query) {
         echo "<script>alert('Data SPP berhasil ditambahkan!'); window.location='spp.php';</script>";
     } else {
