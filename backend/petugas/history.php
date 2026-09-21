@@ -6,18 +6,6 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'petugas') {
 }
 include '../../koneksi.php';
 
-/* ============================================================
-   HISTORY STATUS PEMBAYARAN SISWA (versi petugas)
-   Sama seperti punya admin: 1 baris per siswa, ringkasan jumlah
-   bulan yang sudah dibayar + tahun ajaran yang sudah ada
-   transaksinya (format "2024/2025"), plus kotak pencarian.
-   ============================================================ */
-
-function formatTA($tahun)
-{
-    $tahun = (int) $tahun;
-    return $tahun . '/' . ($tahun + 1);
-}
 
 $query = mysqli_query($koneksi, "
     SELECT

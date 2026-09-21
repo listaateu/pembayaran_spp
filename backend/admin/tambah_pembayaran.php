@@ -96,32 +96,52 @@ if (isset($_POST['bayar'])) {
     $id_baru_list = [];
     $bulan_dilewati = [];
 
-    foreach ($daftar_bulan_dipilih as $bulan_ke) {
-        $bulan_ke = (int) $bulan_ke;
-        if (!isset($DAFTAR_BULAN[$bulan_ke])) {
-            continue;
-        }
-        $nama_bulan = $DAFTAR_BULAN[$bulan_ke];
+       // ---------------------------------------------------------------
+    // TRANSAKSI DATABASE (COMMIT & ROLLBACK)
+    //   begin_transaction : mulai menahan semua INSERT (belum permanen)
+    //   commit            : semua berhasil -> simpan permanen
+    //   rollback          : ada yang gagal -> batalkan SEMUA
+    // ---------------------------------------------------------------
+    try {
+        mysqli_begin_transaction($koneksi);
 
-        // Lewati kalau ternyata sudah lunas (misal double klik / sudah dibayar petugas lain)
-        if (in_array($nama_bulan, $sudah_lunas_cek)) {
-            $bulan_dilewati[] = $nama_bulan;
-            continue;
-        }
+        foreach ($daftar_bulan_dipilih as $bulan_ke) {
+            $bulan_ke = (int) $bulan_ke;
+            if (!isset($DAFTAR_BULAN[$bulan_ke])) {
+                continue;
+            }
+            $nama_bulan = $DAFTAR_BULAN[$bulan_ke];
 
-        $nama_bulan_esc = mysqli_real_escape_string($koneksi, $nama_bulan);
-        $simpan = mysqli_query($koneksi, "INSERT INTO pembayaran
-            (id_petugas, nisn, tgl_bayar, bulan_dibayar, tahun_dibayar, id_spp, jumlah_bayar)
-            VALUES ('$id_petugas', '$nisn', '$tgl_bayar', '$nama_bulan_esc', '$tahun', '$id_spp', '$nominal')");
+            // Lewati kalau ternyata sudah lunas (misal double klik / sudah dibayar petugas lain)
+            if (in_array($nama_bulan, $sudah_lunas_cek)) {
+                $bulan_dilewati[] = $nama_bulan;
+                continue;
+            }
 
-        if ($simpan) {
+            $nama_bulan_esc = mysqli_real_escape_string($koneksi, $nama_bulan);
+            $simpan = mysqli_query($koneksi, "INSERT INTO pembayaran
+                (id_petugas, nisn, tgl_bayar, bulan_dibayar, tahun_dibayar, id_spp, jumlah_bayar)
+                VALUES ('$id_petugas', '$nisn', '$tgl_bayar', '$nama_bulan_esc', '$tahun', '$id_spp', '$nominal')");
+
+            if (!$simpan) {
+                throw new Exception(mysqli_error($koneksi)); // loncat ke catch -> rollback
+            }
+
             $id_baru_list[] = mysqli_insert_id($koneksi);
             $sudah_lunas_cek[] = $nama_bulan; // tandai supaya tidak dobel dalam loop yang sama
         }
-    }
 
-    if (count($id_baru_list) === 0) {
-        echo "<script>alert('Semua bulan yang dipilih sudah lunas sebelumnya. Tidak ada yang disimpan.'); history.back();</script>";
+        if (count($id_baru_list) === 0) {
+            mysqli_rollback($koneksi);
+            echo "<script>alert('Semua bulan yang dipilih sudah lunas sebelumnya. Tidak ada yang disimpan.'); history.back();</script>";
+            exit();
+        }
+
+        mysqli_commit($koneksi); // semua INSERT berhasil -> simpan permanen
+    } catch (Throwable $e) {
+        mysqli_rollback($koneksi); // ada yang gagal -> batalkan semuanya
+        error_log('Gagal simpan pembayaran: ' . $e->getMessage());
+        echo "<script>alert('Pembayaran gagal disimpan, tidak ada data yang tercatat. Silakan coba lagi.'); history.back();</script>";
         exit();
     }
 

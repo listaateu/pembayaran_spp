@@ -170,13 +170,13 @@ $tahun_sekarang = (int) date('Y');
                     <input type="text" name="no_telp" class="form-control" required maxlength="13">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Nominal / Tahun SPP</label>
+                    <label class="form-label">Nominal / Tahun Ajaran SPP</label>
                     <select name="id_spp" class="form-select" required>
                         <option value="">-- Pilih SPP --</option>
                         <?php
                         $spp = mysqli_query($koneksi, "SELECT * FROM spp");
                         while ($s = mysqli_fetch_assoc($spp)) {
-                            echo "<option value='{$s['id_spp']}'>Tahun: {$s['tahun']} - Rp " . number_format($s['nominal'], 0, ',', '.') . "</option>";
+                            echo "<option value='{$s['id_spp']}'>Tahun Ajaran: " . formatTA($s['tahun']) . " - Rp " . number_format($s['nominal'], 0, ',', '.') . "</option>";
                         }
                         ?>
                     </select>
@@ -196,7 +196,11 @@ $tahun_sekarang = (int) date('Y');
         if (!tingkat || tahunMasukSelect.value !== '') return; // jangan timpa kalau admin sudah pilih manual
 
         var tahunSekarang = <?= $tahun_sekarang; ?>;
-        var selisih = { '10': 0, '11': 1, '12': 2 };
+        var selisih = {
+            '10': 0,
+            '11': 1,
+            '12': 2
+        };
         var saran = tahunSekarang - (selisih[tingkat] || 0);
 
         for (var i = 0; i < tahunMasukSelect.options.length; i++) {

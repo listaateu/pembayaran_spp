@@ -71,7 +71,9 @@ while ($r = mysqli_fetch_assoc($q_rekap)) {
     $bulan_lunas[] = $r['bulan_dibayar'];
 }
 
-$bulan_di_transaksi_ini = array_map(function ($t) { return $t['bulan_dibayar']; }, $daftar_transaksi);
+$bulan_di_transaksi_ini = array_map(function ($t) {
+    return $t['bulan_dibayar'];
+}, $daftar_transaksi);
 $satu_transaksi = (count($daftar_transaksi) === 1);
 
 $pageTitle   = 'Detail Pembayaran - Petugas';
@@ -110,12 +112,30 @@ include __DIR__ . '/components/header.php';
 
                 <?php if ($satu_transaksi): ?>
                     <table class="table table-sm align-middle mb-0">
-                        <tr><td class="text-muted" style="width:45%;">No. Transaksi</td><td><strong>#<?= str_pad($d['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></strong></td></tr>
-                        <tr><td class="text-muted">Tanggal Bayar</td><td><?= date('d F Y', strtotime($d['tgl_bayar'])); ?></td></tr>
-                        <tr><td class="text-muted">Bulan Dibayar</td><td><strong><?= htmlspecialchars($d['bulan_dibayar'] . ' ' . $d['tahun_dibayar']); ?></strong></td></tr>
-                        <tr><td class="text-muted">Nominal</td><td class="fw-bold" style="color:#db2777;">Rp <?= number_format($d['jumlah_bayar'], 0, ',', '.'); ?></td></tr>
-                        <tr><td class="text-muted">Status</td><td><span class="badge bg-success">Lunas</span></td></tr>
-                        <tr><td class="text-muted">Petugas</td><td><?= htmlspecialchars($d['nama_petugas'] ?? '-'); ?></td></tr>
+                        <tr>
+                            <td class="text-muted" style="width:45%;">No. Transaksi</td>
+                            <td><strong>#<?= str_pad($d['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tanggal Bayar</td>
+                            <td><?= date('d F Y', strtotime($d['tgl_bayar'])); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bulan Dibayar</td>
+                            <td><strong><?= htmlspecialchars($d['bulan_dibayar'] . ' ' . $d['tahun_dibayar']); ?></strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Nominal</td>
+                            <td class="fw-bold" style="color:#db2777;">Rp <?= number_format($d['jumlah_bayar'], 0, ',', '.'); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status</td>
+                            <td><span class="badge bg-success">Lunas</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Petugas</td>
+                            <td><?= htmlspecialchars($d['nama_petugas'] ?? '-'); ?></td>
+                        </tr>
                     </table>
                 <?php else: ?>
                     <table class="table table-sm align-middle mb-2">
@@ -128,11 +148,11 @@ include __DIR__ . '/components/header.php';
                         </thead>
                         <tbody>
                             <?php foreach ($daftar_transaksi as $t): ?>
-                            <tr>
-                                <td class="small text-muted">#<?= str_pad($t['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></td>
-                                <td><?= htmlspecialchars($t['bulan_dibayar'] . ' ' . $t['tahun_dibayar']); ?></td>
-                                <td class="text-end">Rp <?= number_format($t['jumlah_bayar'], 0, ',', '.'); ?></td>
-                            </tr>
+                                <tr>
+                                    <td class="small text-muted">#<?= str_pad($t['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></td>
+                                    <td><?= htmlspecialchars($t['bulan_dibayar'] . ' ' . $t['tahun_dibayar']); ?></td>
+                                    <td class="text-end">Rp <?= number_format($t['jumlah_bayar'], 0, ',', '.'); ?></td>
+                                </tr>
                             <?php endforeach; ?>
                         </tbody>
                         <tfoot>
@@ -156,11 +176,26 @@ include __DIR__ . '/components/header.php';
             <div class="card-body">
                 <h6 class="fw-bold mb-3" style="color:#9d174d;">Data Siswa</h6>
                 <table class="table table-sm align-middle mb-0">
-                    <tr><td class="text-muted" style="width:40%;">Nama</td><td><strong><?= htmlspecialchars($d['nama']); ?></strong></td></tr>
-                    <tr><td class="text-muted">NISN</td><td><?= htmlspecialchars($d['nisn']); ?></td></tr>
-                    <tr><td class="text-muted">NIS</td><td><?= htmlspecialchars($d['nis']); ?></td></tr>
-                    <tr><td class="text-muted">Kelas</td><td><?= htmlspecialchars($d['tingkat'] . ' ' . $jurusan_kode . ' ' . $rombel_no); ?></td></tr>
-                    <tr><td class="text-muted">No. Telp</td><td><?= htmlspecialchars($d['no_telp']); ?></td></tr>
+                    <tr>
+                        <td class="text-muted" style="width:40%;">Nama</td>
+                        <td><strong><?= htmlspecialchars($d['nama']); ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NISN</td>
+                        <td><?= htmlspecialchars($d['nisn']); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">NIS</td>
+                        <td><?= htmlspecialchars($d['nis']); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Kelas</td>
+                        <td><?= htmlspecialchars($d['tingkat'] . ' ' . $jurusan_kode . ' ' . $rombel_no); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">No. Telp</td>
+                        <td><?= htmlspecialchars($d['no_telp']); ?></td>
+                    </tr>
                 </table>
             </div>
         </div>
@@ -171,12 +206,11 @@ include __DIR__ . '/components/header.php';
 <div class="card border-0 shadow-sm mt-3">
     <div class="card-body">
         <h6 class="fw-bold mb-3" style="color:#9d174d;">
-            Rekap Pembayaran Tahun <?= htmlspecialchars($d['tahun_dibayar']); ?>
-            <span class="badge bg-secondary ms-1"><?= count($bulan_lunas); ?> / 12 bulan lunas</span>
+            Rekap Pembayaran Tahun Ajaran <?= formatTA($d['tahun_dibayar']); ?> <span class="badge bg-secondary ms-1"><?= count($bulan_lunas); ?> / 12 bulan lunas</span>
         </h6>
         <div class="d-flex flex-wrap gap-2">
             <?php
-            $semua_bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            $semua_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             foreach ($semua_bulan as $b) {
                 $ok = in_array($b, $bulan_lunas);
                 $aktif = in_array($b, $bulan_di_transaksi_ini);
@@ -192,7 +226,7 @@ include __DIR__ . '/components/header.php';
     <a href="transaksi.php" class="btn btn-secondary"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
     <div class="d-flex gap-2">
         <a href="transaksi.php?tingkat=<?= urlencode($d['tingkat']); ?>&jurusan=<?= urlencode($jurusan_kode); ?>&rombel=<?= urlencode($rombel_no); ?>&nisn=<?= urlencode($d['nisn']); ?>&f=1"
-           class="btn btn-outline-secondary">Bayar Bulan Lain</a>
+            class="btn btn-outline-secondary">Bayar Bulan Lain</a>
         <a href="cetak_pembayaran.php?ids=<?= implode(',', $daftar_id); ?>" class="btn text-white" style="background-color:#db2777;"><i class="bi bi-printer me-1"></i> Cetak Kuitansi</a>
     </div>
 </div>

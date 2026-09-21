@@ -178,14 +178,14 @@ if (!in_array($tahun_masuk_siswa, $daftar_tahun_masuk)) {
                     <input type="text" name="no_telp" class="form-control" value="<?= $siswa['no_telp']; ?>" required maxlength="13">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Nominal / Tahun SPP</label>
+                    <label class="form-label">Nominal / Tahun Ajaran SPP</label>
                     <select name="id_spp" class="form-select" required>
                         <option value="">-- Pilih SPP --</option>
                         <?php
                         $spp = mysqli_query($koneksi, "SELECT * FROM spp");
                         while ($s = mysqli_fetch_assoc($spp)) {
                             $selected = ($s['id_spp'] == $siswa['id_spp']) ? 'selected' : '';
-                            echo "<option value='{$s['id_spp']}' $selected>Tahun: {$s['tahun']} - Rp " . number_format($s['nominal'], 0, ',', '.') . "</option>";
+                            echo "<option value='{$s['id_spp']}' $selected>Tahun Ajaran: " . formatTA($s['tahun']) . " - Rp " . number_format($s['nominal'], 0, ',', '.') . "</option>";
                         }
                         ?>
                     </select>

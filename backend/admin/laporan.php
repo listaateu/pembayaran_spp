@@ -156,7 +156,7 @@ include '../components/sidebar.php';
                                     <option value="" disabled selected>-- Pilih Kelas dulu --</option>
                                     <option value="semua">Semua Tahun</option>
                                     <?php foreach ($daftar_tahun as $th): ?>
-                                        <option value="<?= htmlspecialchars($th); ?>"><?= htmlspecialchars($th); ?></option>
+                                        <option value="<?= htmlspecialchars($th); ?>"><?= htmlspecialchars(formatTA($th)); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -173,19 +173,33 @@ include '../components/sidebar.php';
 </main>
 
 <style>
-    .laporan-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-    .laporan-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; }
-    .form-select:disabled { background-color: #f1f1f1; cursor: not-allowed; }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .laporan-card {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .laporan-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .form-select:disabled {
+        background-color: #f1f1f1;
+        cursor: not-allowed;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>
 
 <script>
     // ===== FORM LAPORAN SISWA =====
     // Cuma 1 filter, jadi tombol Terapkan langsung aktif begitu Kelas dipilih.
     const siswaTingkat = document.getElementById('siswa-tingkat');
-    const siswaSubmit  = document.getElementById('siswa-submit');
+    const siswaSubmit = document.getElementById('siswa-submit');
 
-    siswaTingkat.addEventListener('change', function () {
+    siswaTingkat.addEventListener('change', function() {
         siswaSubmit.disabled = (this.value === '');
     });
 
@@ -193,15 +207,15 @@ include '../components/sidebar.php';
     // Filter Tahun terkunci sampai Filter Kelas diisi.
     // Tombol Terapkan terkunci sampai kedua filter terisi.
     const bayarTingkat = document.getElementById('bayar-tingkat');
-    const bayarTahun   = document.getElementById('bayar-tahun');
-    const bayarSubmit  = document.getElementById('bayar-submit');
+    const bayarTahun = document.getElementById('bayar-tahun');
+    const bayarSubmit = document.getElementById('bayar-submit');
     const placeholderTahunAwal = bayarTahun.querySelector('option[value=""]');
 
     function cekTombolPembayaran() {
         bayarSubmit.disabled = (bayarTingkat.value === '' || bayarTahun.value === '');
     }
 
-    bayarTingkat.addEventListener('change', function () {
+    bayarTingkat.addEventListener('change', function() {
         if (this.value !== '') {
             bayarTahun.disabled = false;
             if (placeholderTahunAwal) {

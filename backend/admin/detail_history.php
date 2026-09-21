@@ -1,5 +1,9 @@
 <?php
 session_start();
+if (!isset($_SESSION['level']) || $_SESSION['level'] != 'admin') {
+    echo "<script>alert('Silakan login terlebih dahulu!'); window.location='../../login.php';</script>";
+    exit();
+}
 include '../../koneksi.php';
 
 if (!isset($_GET['nisn'])) {
@@ -61,7 +65,7 @@ include '../components/sidebar.php';
     ?>
     <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
-            <h6 class="fw-bold mb-3" style="color:#9d174d;">Tahun <?= $tahun; ?></h6>
+            <h6 class="fw-bold mb-3" style="color:#9d174d;">Tahun Ajaran <?= formatTA($tahun); ?></h6>
             <div class="table-responsive">
                 <table class="table table-bordered text-center align-middle mb-0">
                     <thead style="background-color: #fdf2f8; color: #db2777;">

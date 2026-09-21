@@ -23,14 +23,10 @@ include '../components/sidebar.php';
 
    Ditambahkan juga kotak pencarian nama/NISN (filter di sisi
    browser, tanpa reload halaman).
-   ============================================================ */
 
-// Format tahun ajaran ala Indonesia: 2024 -> "2024/2025"
-function formatTA($tahun)
-{
-    $tahun = (int) $tahun;
-    return $tahun . '/' . ($tahun + 1);
-}
+   Catatan: fungsi formatTA() sekarang ada di koneksi.php, jadi
+   tidak perlu didefinisikan lagi di sini.
+   ============================================================ */
 
 $query = mysqli_query($koneksi, "
     SELECT

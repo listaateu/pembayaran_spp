@@ -24,7 +24,7 @@ include '../components/sidebar.php';
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Tahun</th>
+                            <th>Tahun Ajaran</th>
                             <th>Nominal</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -35,15 +35,15 @@ include '../components/sidebar.php';
                         $data_spp = mysqli_query($koneksi, "SELECT * FROM spp ORDER BY id_spp DESC");
                         while ($row = mysqli_fetch_assoc($data_spp)) {
                         ?>
-                        <tr>
-                            <td><?php echo $no++; ?></td>
-                            <td class="fw-semibold"><?php echo $row['tahun']; ?></td>
-                            <td>Rp <?php echo number_format($row['nominal'], 0, ',', '.'); ?></td>
-                            <td class="text-center">
-                                <a href="edit_spp.php?id=<?php echo $row['id_spp']; ?>" class="btn btn-sm btn-warning text-white px-2 py-1"><i class="bi bi-pencil-square"></i></a>
-                                <a href="hapus_spp.php?id=<?php echo $row['id_spp']; ?>" class="btn btn-sm btn-danger px-2 py-1" onclick="return confirm('Yakin ingin menghapus data ini?')"><i class="bi bi-trash"></i></a>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td><?php echo $no++; ?></td>
+                                <td class="fw-semibold"><?php echo formatTA($row['tahun']); ?></td>
+                                <td>Rp <?php echo number_format($row['nominal'], 0, ',', '.'); ?></td>
+                                <td class="text-center">
+                                    <a href="edit_spp.php?id=<?php echo $row['id_spp']; ?>" class="btn btn-sm btn-warning text-white px-2 py-1"><i class="bi bi-pencil-square"></i></a>
+                                    <a href="hapus_spp.php?id=<?php echo $row['id_spp']; ?>" class="btn btn-sm btn-danger px-2 py-1" onclick="return confirm('Yakin ingin menghapus data ini?')"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
                         <?php } ?>
                     </tbody>
                 </table>

@@ -74,7 +74,7 @@ if ($jenis === 'siswa') {
 } else {
     $judul = 'Laporan Pembayaran SPP';
     if ($tingkat !== '') $judul .= ' - Kelas ' . $tingkat;
-    if ($tahun !== '') $judul .= ' - Tahun ' . $tahun;
+    if ($tahun !== '') $judul .= ' - Tahun Ajaran ' . formatTA($tahun);
 
     $sql = "SELECT pembayaran.tgl_bayar, pembayaran.bulan_dibayar, pembayaran.tahun_dibayar,
                    pembayaran.jumlah_bayar, siswa.nisn, siswa.nama,

@@ -33,8 +33,12 @@ include '../components/sidebar.php';
         <div class="card-body">
             <form method="POST" action="">
                 <div class="mb-3">
-                    <label class="form-label">Tahun</label>
-                    <input type="text" name="tahun" class="form-control" placeholder="Contoh: 2026" required maxlength="4">
+                    <label class="form-label">Tahun Ajaran (masukkan tahun awal saja)</label>
+                    <input type="text" name="tahun" id="input-tahun" class="form-control" placeholder="Contoh: 2026" required maxlength="4" pattern="\d{4}" inputmode="numeric">
+                    <div class="form-text">
+                        Cukup isi tahun awalnya, tahun akhirnya otomatis.
+                        Preview: <strong id="preview-tahun-ajaran">-</strong>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nominal</label>
@@ -46,5 +50,15 @@ include '../components/sidebar.php';
         </div>
     </div>
 </main>
+
+<script>
+    // Preview otomatis "2026" -> "2026/2027" saat admin ngetik tahun
+    const inputTahun = document.getElementById('input-tahun');
+    const previewTahun = document.getElementById('preview-tahun-ajaran');
+    inputTahun.addEventListener('input', function () {
+        const t = parseInt(this.value, 10);
+        previewTahun.textContent = (this.value.length === 4 && !isNaN(t)) ? (t + '/' + (t + 1)) : '-';
+    });
+</script>
 
 <?php include '../components/footer.php'; ?>

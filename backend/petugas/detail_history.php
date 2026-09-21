@@ -6,17 +6,6 @@ if (!isset($_SESSION['level']) || $_SESSION['level'] != 'petugas') {
 }
 include '../../koneksi.php';
 
-function formatTA($tahun)
-{
-    $tahun = (int) $tahun;
-    return $tahun . '/' . ($tahun + 1);
-}
-
-if (!isset($_GET['nisn'])) {
-    header("location:history.php");
-    exit();
-}
-
 $nisn = mysqli_real_escape_string($koneksi, $_GET['nisn']);
 
 // Ambil data siswa + tingkat kelasnya (BUKAN lewat id_spp lagi, karena sekarang bisa multi-tahun)

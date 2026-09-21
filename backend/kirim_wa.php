@@ -1,16 +1,4 @@
 <?php
-/**
- * kirim_wa.php
- * -----------------------------------------------------------
- * LETAKKAN FILE INI DI: pembayaran_spp/backend/kirim_wa.php
- * (sejajar/satu folder dengan folder "petugas" dan "admin")
- *
- * File ini dipanggil otomatis oleh tombol "Kirim ke WhatsApp"
- * di halaman cetak_pembayaran.php (baik punya petugas maupun admin).
- * Tugasnya: ambil data pembayaran + nomor HP siswa dari database,
- * lalu kirim pesan WA langsung lewat Fonnte (tanpa perlu buka WA lagi).
- * -----------------------------------------------------------
- */
 
 session_start();
 header('Content-Type: application/json');
@@ -22,15 +10,10 @@ if (!isset($_SESSION['level']) || !in_array($_SESSION['level'], ['admin', 'petug
 }
 
 include '../koneksi.php'; // sesuaikan jika lokasi koneksi.php beda
+include 'config.php';     // <-- token Fonnte sekarang dari sini, bukan hardcode lagi
 
 // =====================================================
-// 1) TOKEN FONNTE KAMU
-// =====================================================
-define('FONNTE_TOKEN', 'EXRcw4EjZjZdjwrco7od');
-define('FONNTE_API_URL', 'https://api.fonnte.com/send');
-
-// =====================================================
-// 2) AMBIL ID PEMBAYARAN YANG DIKIRIM DARI HALAMAN KUITANSI
+// 1) AMBIL ID PEMBAYARAN YANG DIKIRIM DARI HALAMAN KUITANSI
 // =====================================================
 $ids_mentah = $_POST['ids'] ?? '';
 $daftar_id  = array_filter(array_map('intval', explode(',', $ids_mentah)));
@@ -42,7 +25,7 @@ if (count($daftar_id) === 0) {
 $ids_sql = implode(',', $daftar_id);
 
 // =====================================================
-// 3) AMBIL DATA PEMBAYARAN + NOMOR HP SISWA
+// 2) AMBIL DATA PEMBAYARAN + NOMOR HP SISWA
 //    (query ini sama persis dengan yang dipakai di cetak_pembayaran.php,
 //     ditambah kolom siswa.no_telp)
 // =====================================================
@@ -68,6 +51,18 @@ if (count($daftar) === 0) {
 }
 
 $d = $daftar[0];
+
+// =====================================================
+// 3) HITUNG PROGRESS TAHUN AJARAN
+//    (berapa bulan sudah lunas dari 12 bulan, di tahun ajaran
+//    yang sama dengan transaksi ini), supaya kata "LUNAS" di
+//    pesan WA tidak disalahartikan sebagai "lunas 1 tahun penuh"
+// =====================================================
+$nisn_esc = mysqli_real_escape_string($koneksi, $d['nisn']);
+$thn_esc  = mysqli_real_escape_string($koneksi, $d['tahun_dibayar']);
+$q_progress = mysqli_query($koneksi, "SELECT COUNT(*) AS jml FROM pembayaran WHERE nisn = '$nisn_esc' AND tahun_dibayar = '$thn_esc'");
+$jml_lunas_tahun = (int) (mysqli_fetch_assoc($q_progress)['jml'] ?? 0);
+$progress_penuh  = ($jml_lunas_tahun >= 12);
 
 // =====================================================
 // 4) VALIDASI NOMOR HP
@@ -97,17 +92,28 @@ if ($satu_transaksi) {
     $keterangan_bulan = "SPP " . count($daftar) . " bulan sekaligus: " . implode(', ', $list_bulan);
 }
 
+// Baris "Status" dibuat beda tergantung apakah transaksi ini
+// menggenapkan 12/12 bulan tahun ajaran atau belum, supaya kata
+// "LUNAS" tidak disalahartikan sebagai "lunas 1 tahun penuh"
+// padahal baru sebagian bulan yang dibayar.
+if ($progress_penuh) {
+    $baris_status = "Status : LUNAS (12 dari 12 bulan tahun ajaran ini sudah lunas semua)";
+} else {
+    $baris_status = "Status : LUNAS untuk pembayaran ini\n"
+                  . "Progress: " . $jml_lunas_tahun . " dari 12 bulan tahun ajaran ini sudah lunas";
+}
+
 $pesan  = "Assalamu'alaikum,\n\n";
 $pesan .= "Berikut kami sampaikan bukti pembayaran SPP:\n\n";
 $pesan .= "Nama   : " . $d['nama'] . "\n";
 $pesan .= "Kelas  : " . $d['tingkat'] . " " . $d['jurusan'] . "\n";
 $pesan .= "Untuk  : " . $keterangan_bulan . "\n";
 $pesan .= "Total  : Rp " . number_format($total_bayar, 0, ',', '.') . "\n";
-$pesan .= "Status : LUNAS\n\n";
+$pesan .= $baris_status . "\n\n";
 $pesan .= "Terima kasih.\n- SPP Digital -";
 
 // =====================================================
-// 6) KIRIM KE FONNTE
+// 5) KIRIM KE FONNTE
 // =====================================================
 $ch = curl_init(FONNTE_API_URL);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
