@@ -33,6 +33,8 @@ $url_dashboard = ($level_staf === 'admin') ? '../backend/admin/index.php' : '../
 
 // Kalau siswa masih punya sesi cek status yang aktif
 $siswa_aktif = !empty($_SESSION['siswa_nisn']);
+
+function formatTA($tahun) { $t = (int) $tahun; return $t . '/' . ($t + 1); }
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -41,170 +43,212 @@ $siswa_aktif = !empty($_SESSION['siswa_nisn']);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPP Digital — Cek Status Pembayaran SPP</title>
 <meta name="description" content="Cek status pembayaran SPP per bulan, tunggakan, dan riwayat kuitansi dengan NISN dan NIS.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/frontend.css">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/main.css" rel="stylesheet">
+<link href="assets/css/custom.css" rel="stylesheet">
 </head>
-<body>
-<div class="wrap">
+<body class="index-page">
 
-  <!-- ========== TOPBAR ========== -->
-  <header class="topbar">
-    <a href="index.php" class="brand" aria-label="SPP Digital, beranda">
-      <span class="brand-mark">
-        <svg width="20" height="20" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="22" height="22" rx="6" stroke="#FBEAF4" stroke-width="1.8"/>
-          <path d="M7 9.5H19M7 13H16M7 16.5H13" stroke="#FBEAF4" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      SPP Digital
-    </a>
-    <div class="top-actions">
+  <!-- ===== HEADER ===== -->
+  <header class="header d-flex align-items-center sticky-top" style="background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+    <div class="container-fluid container-xl d-flex align-items-center justify-content-between">
+      <a href="index.php" class="logo d-flex align-items-center">
+        <i class="bi bi-file-earmark-text-fill fs-3" style="color:#DB2777"></i>
+        <h1 class="sitename ms-2 mb-0">SPP Digital</h1>
+      </a>
       <?php if ($staf_login): ?>
-        <a href="<?= $url_dashboard; ?>" class="btn btn-pink">Buka Dashboard</a>
+        <a href="<?= htmlspecialchars($url_dashboard); ?>" class="btn btn-pink rounded-pill px-4">Buka Dashboard</a>
       <?php else: ?>
-        <a href="../login.php" class="btn btn-ghost">Masuk Petugas</a>
+        <a href="../login.php" class="btn btn-outline-secondary rounded-pill px-4">Masuk Petugas</a>
       <?php endif; ?>
     </div>
   </header>
 
-  <!-- ========== HERO ========== -->
-  <main>
-  <section class="hero">
-    <div>
-      <span class="eyebrow"><i></i> Untuk siswa &amp; orang tua</span>
-      <h1>Status SPP-mu, <em>jelas</em> kapan saja.</h1>
-      <p class="lead">Lihat bulan mana yang sudah lunas, cek tunggakan, dan buka riwayat kuitansi tanpa perlu antre bertanya ke loket.</p>
+  <main class="main">
 
-      <div class="cek-card" id="cek">
-        <h2>Cek status SPP</h2>
-        <p class="sub">Masukkan NISN dan NIS yang tertera di kartu pelajar.</p>
+    <!-- ===== HERO ===== -->
+    <section class="section" style="background:#fdf2f8;padding-top:60px;padding-bottom:60px">
+      <div class="container">
+        <div class="row align-items-center gy-5">
+          <div class="col-lg-6">
+            <span class="badge rounded-pill" style="background:#fce7f3;color:#DB2777">● Untuk siswa &amp; orang tua</span>
+            <h1 class="mt-3" style="font-weight:900;color:#3b0a2b">Status SPP-mu, <em style="color:#DB2777">jelas</em> kapan saja.</h1>
+            <p class="lead">Lihat bulan mana yang sudah lunas, cek tunggakan, dan buka riwayat kuitansi tanpa perlu antre bertanya ke loket.</p>
 
-        <?php if ($error): ?>
-          <div class="alert alert-err" role="alert"><?= htmlspecialchars($error); ?></div>
-        <?php endif; ?>
+            <div class="card border-0 shadow-sm p-4 mt-4" id="cek">
+              <h2 class="h4">Cek status SPP</h2>
+              <p class="text-muted small">Masukkan NISN dan NIS yang tertera di kartu pelajar.</p>
 
-        <?php if ($siswa_aktif): ?>
-          <div class="alert alert-info">
-            Kamu masih masuk di perangkat ini.
-            <a href="cek_spp.php">Lanjut lihat status</a> &middot;
-            <a href="cek_spp.php?keluar=1">Keluar</a>
+              <?php if ($error): ?>
+                <div class="alert alert-danger py-2" role="alert"><?= htmlspecialchars($error); ?></div>
+              <?php endif; ?>
+
+              <?php if ($siswa_aktif): ?>
+                <div class="alert alert-info py-2">
+                  Kamu masih masuk di perangkat ini.
+                  <a href="cek_spp.php">Lanjut lihat status</a> &middot;
+                  <a href="cek_spp.php?keluar=1">Keluar</a>
+                </div>
+              <?php endif; ?>
+
+              <form method="POST" action="cek_spp.php" autocomplete="off">
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf_cek']); ?>">
+                <div class="mb-3">
+                  <label for="nisn" class="form-label fw-semibold">NISN</label>
+                  <input type="text" class="form-control" id="nisn" name="nisn" inputmode="numeric" maxlength="20" placeholder="Contoh: 0051234567" required>
+                </div>
+                <div class="mb-2">
+                  <label for="nis" class="form-label fw-semibold">NIS</label>
+                  <input type="text" class="form-control" id="nis" name="nis" inputmode="numeric" maxlength="20" placeholder="Nomor induk sekolah" required>
+                  <div class="form-text">Dua-duanya harus cocok, demi menjaga privasi data pembayaran.</div>
+                </div>
+                <button type="submit" class="btn btn-pink btn-lg w-100 mt-2 rounded-pill">Lihat status SPP</button>
+              </form>
+
+              <p class="small text-muted mt-3 mb-0">
+                <i class="bi bi-shield-check" style="color:#DB2777"></i>
+                Sesi otomatis berakhir setelah 15 menit. Jangan lupa tekan "Keluar" kalau memakai perangkat bersama.
+              </p>
+            </div>
           </div>
-        <?php endif; ?>
 
-        <form method="POST" action="cek_spp.php" autocomplete="off">
-          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf_cek']); ?>">
-          <div class="field">
-            <label for="nisn">NISN</label>
-            <input type="text" id="nisn" name="nisn" inputmode="numeric" maxlength="20" placeholder="Contoh: 0051234567" required>
+          <!-- kartu dekoratif -->
+          <div class="col-lg-5 offset-lg-1">
+            <div class="kartu-spp">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <b class="small">SPP DIGITAL</b>
+                <span class="tag">KARTU SPP</span>
+              </div>
+              <h3 class="mb-0">Tahun Ajaran <?= formatTA(date('Y')); ?></h3>
+              <small class="opacity-75">Contoh tampilan status per bulan</small>
+              <div class="grid">
+                <?php
+                $singk = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+                $bln_ini = (int) date('n');
+                foreach ($singk as $i => $s) {
+                    $ke = $i + 1;
+                    $kelas = ($ke < $bln_ini) ? 'on' : (($ke === $bln_ini) ? 'now' : '');
+                    echo '<span class="' . $kelas . '">' . $s . '</span>';
+                }
+                ?>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="opacity-75">Lunas &middot; bulan berjalan &middot; belum</small>
+                <b>SPP</b>
+              </div>
+            </div>
           </div>
-          <div class="field">
-            <label for="nis">NIS</label>
-            <input type="text" id="nis" name="nis" inputmode="numeric" maxlength="20" placeholder="Nomor induk sekolah" required>
-            <div class="hint">Dua-duanya harus cocok, demi menjaga privasi data pembayaran.</div>
-          </div>
-          <button type="submit" class="btn btn-pink btn-lg">Lihat status SPP</button>
-        </form>
-
-        <p class="privacy">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M12 3l8 3v6c0 4.4-3.2 8.2-8 9-4.8-.8-8-4.6-8-9V6l8-3Z" stroke="#DB2777" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="#DB2777" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Sesi otomatis berakhir setelah 15 menit. Jangan lupa tekan "Keluar" kalau memakai perangkat bersama.
-        </p>
-      </div>
-    </div>
-
-    <!-- kartu dekoratif -->
-    <div class="kartu-wrap" aria-hidden="true">
-      <div class="kartu">
-        <div class="kartu-top"><span>SPP DIGITAL</span><span class="kartu-tag">KARTU SPP</span></div>
-        <h3>Tahun Ajaran <?= formatTA(date('Y')); ?></h3>
-        <small>Contoh tampilan status per bulan</small>
-        <div class="kartu-grid">
-          <?php
-          $singk = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-          $bln_ini = (int) date('n');
-          foreach ($singk as $i => $s) {
-              $ke = $i + 1;
-              $kelas = ($ke < $bln_ini) ? 'on' : (($ke === $bln_ini) ? 'now' : '');
-              echo '<span class="' . $kelas . '">' . $s . '</span>';
-          }
-          ?>
         </div>
-        <div class="kartu-foot"><span>Lunas &middot; bulan berjalan &middot; belum</span><b>SPP</b></div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ========== FITUR ========== -->
-  <section class="blok" id="fitur">
-    <div class="sec-head">
-      <h2>Semua yang perlu kamu tahu, di satu halaman</h2>
-      <p>Data langsung dari catatan petugas sekolah, jadi selalu sama dengan yang ada di loket.</p>
-    </div>
-    <div class="fitur">
-      <article>
-        <div class="ikon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <h3>Status per bulan</h3>
-        <p>Dua belas bulan ditampilkan sekaligus: lunas, bulan berjalan, atau menunggak, lengkap per tahun ajaran.</p>
-      </article>
-      <article>
-        <div class="ikon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3.5v.01M10.3 3.9L2.5 17.5A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <h3>Tunggakan yang transparan</h3>
-        <p>Jumlah bulan dan total rupiah yang belum dibayar dihitung otomatis, tidak ada yang tertinggal.</p>
-      </article>
-      <article>
-        <div class="ikon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 3h10a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8h6M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <h3>Riwayat &amp; nomor kuitansi</h3>
-        <p>Setiap pembayaran punya nomor kuitansi dan tanggal. Halaman status juga bisa dicetak sebagai rekap.</p>
-      </article>
-    </div>
+    <!-- ===== FITUR ===== -->
+    <section id="fitur" class="section">
+      <div class="container text-center" data-aos="fade-up">
+        <h2>Semua yang perlu kamu tahu, di satu halaman</h2>
+        <p class="text-muted">Data langsung dari catatan petugas sekolah, jadi selalu sama dengan yang ada di loket.</p>
+      </div>
+      <div class="container">
+        <div class="row gy-4 mt-2">
+          <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center">
+              <i class="bi bi-calendar2-check fs-1" style="color:#DB2777"></i>
+              <h3 class="h5 mt-3">Status per bulan</h3>
+              <p class="text-muted small mb-0">Dua belas bulan ditampilkan sekaligus: lunas, bulan berjalan, atau menunggak, lengkap per tahun ajaran.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center">
+              <i class="bi bi-exclamation-triangle fs-1" style="color:#DB2777"></i>
+              <h3 class="h5 mt-3">Tunggakan yang transparan</h3>
+              <p class="text-muted small mb-0">Jumlah bulan dan total rupiah yang belum dibayar dihitung otomatis, tidak ada yang tertinggal.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4 text-center">
+              <i class="bi bi-receipt fs-1" style="color:#DB2777"></i>
+              <h3 class="h5 mt-3">Riwayat &amp; nomor kuitansi</h3>
+              <p class="text-muted small mb-0">Setiap pembayaran punya nomor kuitansi dan tanggal. Halaman status juga bisa dicetak sebagai rekap.</p>
+            </div>
+          </div>
+        </div>
 
-    <div class="stat-strip">
-      <div><b><?= number_format($total_siswa, 0, ',', '.'); ?></b>siswa terdaftar</div>
-      <div><b><?= number_format($total_transaksi, 0, ',', '.'); ?></b>pembayaran tercatat</div>
-    </div>
-  </section>
+        <div class="row text-center mt-5">
+          <div class="col-6">
+            <h3 style="color:#DB2777;font-weight:900"><?= number_format($total_siswa, 0, ',', '.'); ?></h3>
+            <p class="text-muted mb-0">siswa terdaftar</p>
+          </div>
+          <div class="col-6">
+            <h3 style="color:#DB2777;font-weight:900"><?= number_format($total_transaksi, 0, ',', '.'); ?></h3>
+            <p class="text-muted mb-0">pembayaran tercatat</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <!-- ========== ALUR ========== -->
-  <section class="blok" id="alur">
-    <div class="sec-head">
-      <h2>Bagaimana cara kerjanya?</h2>
-    </div>
-    <ol class="langkah">
-      <li><h3>Bayar ke petugas</h3><p>Pembayaran SPP dilakukan langsung lewat petugas sekolah, per bulan.</p></li>
-      <li><h3>Tercatat otomatis</h3><p>Petugas menginput pembayaran, status bulan itu langsung berubah jadi lunas.</p></li>
-      <li><h3>Cek &amp; simpan bukti</h3><p>Buka halaman ini kapan pun untuk memastikan, atau cetak rekapnya.</p></li>
-    </ol>
-  </section>
+    <!-- ===== ALUR ===== -->
+    <section id="alur" class="section light-background">
+      <div class="container text-center">
+        <h2>Bagaimana cara kerjanya?</h2>
+      </div>
+      <div class="container">
+        <div class="row gy-4 text-center">
+          <div class="col-md-4">
+            <div class="fs-1 fw-bold" style="color:#DB2777">1</div>
+            <h3 class="h5">Bayar ke petugas</h3>
+            <p class="text-muted small">Pembayaran SPP dilakukan langsung lewat petugas sekolah, per bulan.</p>
+          </div>
+          <div class="col-md-4">
+            <div class="fs-1 fw-bold" style="color:#DB2777">2</div>
+            <h3 class="h5">Tercatat otomatis</h3>
+            <p class="text-muted small">Petugas menginput pembayaran, status bulan itu langsung berubah jadi lunas.</p>
+          </div>
+          <div class="col-md-4">
+            <div class="fs-1 fw-bold" style="color:#DB2777">3</div>
+            <h3 class="h5">Cek &amp; simpan bukti</h3>
+            <p class="text-muted small">Buka halaman ini kapan pun untuk memastikan, atau cetak rekapnya.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <!-- ========== FAQ ========== -->
-  <section class="blok" id="faq">
-    <div class="sec-head"><h2>Pertanyaan yang sering muncul</h2></div>
-    <details class="faq">
-      <summary>Di mana saya bisa menemukan NISN dan NIS?</summary>
-      <p>Keduanya biasanya tercetak di kartu pelajar atau rapor. Kalau belum tahu, tanyakan ke wali kelas atau tata usaha.</p>
-    </details>
-    <details class="faq">
-      <summary>Saya sudah bayar tapi statusnya belum lunas?</summary>
-      <p>Status diperbarui setelah petugas mencatat pembayaran. Kalau sudah lewat satu hari kerja dan belum berubah, bawa bukti kuitansi ke petugas sekolah.</p>
-    </details>
-    <details class="faq">
-      <summary>Apa arti "Menunggak" dan "Bulan berjalan"?</summary>
-      <p>"Menunggak" berarti bulan tersebut sudah lewat dan belum tercatat dibayar. "Bulan berjalan" adalah bulan saat ini. Bulan setelahnya ditandai abu-abu sampai waktunya tiba.</p>
-    </details>
-    <details class="faq">
-      <summary>Apakah data saya bisa dilihat orang lain?</summary>
-      <p>Tidak bisa tanpa NISN dan NIS yang cocok. Setelah beberapa kali salah input, pengecekan dikunci sementara.</p>
-    </details>
-  </section>
+    <!-- ===== FAQ ===== -->
+    <section id="faq" class="section">
+      <div class="container">
+        <h2 class="text-center mb-4">Pertanyaan yang sering muncul</h2>
+        <div class="accordion" id="faqAcc">
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f1">Di mana saya bisa menemukan NISN dan NIS?</button></h3>
+            <div id="f1" class="accordion-collapse collapse" data-bs-parent="#faqAcc"><div class="accordion-body">Keduanya biasanya tercetak di kartu pelajar atau rapor. Kalau belum tahu, tanyakan ke wali kelas atau tata usaha.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f2">Saya sudah bayar tapi statusnya belum lunas?</button></h3>
+            <div id="f2" class="accordion-collapse collapse" data-bs-parent="#faqAcc"><div class="accordion-body">Status diperbarui setelah petugas mencatat pembayaran. Kalau sudah lewat satu hari kerja dan belum berubah, bawa bukti kuitansi ke petugas sekolah.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f3">Apa arti "Menunggak" dan "Bulan berjalan"?</button></h3>
+            <div id="f3" class="accordion-collapse collapse" data-bs-parent="#faqAcc"><div class="accordion-body">"Menunggak" berarti bulan tersebut sudah lewat dan belum tercatat dibayar. "Bulan berjalan" adalah bulan saat ini. Bulan setelahnya ditandai abu-abu sampai waktunya tiba.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#f4">Apakah data saya bisa dilihat orang lain?</button></h3>
+            <div id="f4" class="accordion-collapse collapse" data-bs-parent="#faqAcc"><div class="accordion-body">Tidak bisa tanpa NISN dan NIS yang cocok. Setelah beberapa kali salah input, pengecekan dikunci sementara.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <footer class="foot">
-    <span>&copy; <?= date('Y'); ?> SPP Digital &middot; Aplikasi Pembayaran SPP Sekolah</span>
-    <a href="../login.php">Login admin / petugas</a>
+  <footer class="footer text-center py-4" style="background:#3b0a2b;color:#fff">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+      <span>&copy; <?= date('Y'); ?> SPP Digital &middot; Aplikasi Pembayaran SPP Sekolah</span>
+      <a href="../login.php" class="text-white-50">Login admin / petugas</a>
+    </div>
   </footer>
 
-</div>
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+/* ==========================================================
+   SPP Digital — override tema template "Active" jadi pink/maroon
+   ========================================================== */
+:root{
+  --heading-color:#3b0a2b;
+  --accent-color:#DB2777;
+  --nav-hover-color:#DB2777;
+  --nav-dropdown-hover-color:#DB2777;
+}
+.dark-background{
+  --background-color:#3b0a2b;
+  --surface-color:#4a0f36;
+}
+a{color:var(--accent-color)}
+.btn-pink{background:#DB2777;border-color:#DB2777;color:#fff}
+.btn-pink:hover{background:#c11e67;border-color:#c11e67;color:#fff}
+
+/* Kartu dekoratif di hero (contoh tampilan status per bulan) */
+.kartu-spp{background:linear-gradient(160deg,#3b0a2b,#5b1442);border-radius:22px;padding:28px;color:#fff}
+.kartu-spp .tag{background:#f6c453;color:#3b0a2b;font-weight:700;font-size:.75rem;padding:.25rem .6rem;border-radius:20px}
+.kartu-spp .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.kartu-spp .grid span{background:rgba(255,255,255,.12);border-radius:10px;padding:.5rem 0;text-align:center;font-size:.8rem;font-weight:600}
+.kartu-spp .grid span.on{background:#DB2777}
+.kartu-spp .grid span.now{border:2px dashed #f6c453}
+
+/* Grid status bulan di halaman hasil cek */
+.bulan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.bln{border-radius:14px;padding:.8rem .9rem;border:1px solid #eee}
+.bln .n{display:block;font-weight:700}
+.bln .s{display:block;font-size:.8rem;margin-top:2px}
+.bln.bln-lunas{background:#e9f9ee;border-color:#bfe9cd;color:#166534}
+.bln.bln-tunggak{background:#fdecec;border-color:#f6c2c2;color:#991b1b}
+.bln.bln-jalan{background:#fff;border:2px dashed var(--accent-color)}
+.bln.bln-depan{background:#f4f4f5;border-color:#e4e4e7;color:#71717a}
+.bln.bln-sebagian{background:#fff7e6;border-color:#f6dfa8;color:#92620a}
+
+.legend span{display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;margin-right:1.2rem}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+
+.avatar-circle{width:64px;height:64px;border-radius:50%;background:#DB2777;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.4rem}
+
+@media print{
+  .no-print{display:none!important}
+}

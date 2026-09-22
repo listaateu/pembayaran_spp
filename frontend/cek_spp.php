@@ -2,24 +2,13 @@
 /**
  * frontend/cek_spp.php  —  Verifikasi (NISN + NIS) & tampilan status SPP siswa
  * LETAKKAN DI: pembayaran_spp/frontend/cek_spp.php
- *
- * Alur:
- *  - POST dari index.php  -> cocokkan NISN + NIS -> simpan sesi -> redirect ke halaman ini (GET)
- *  - GET                  -> tampilkan status kalau sesi siswa masih aktif
- *  - ?keluar=1            -> hapus sesi siswa (sesi admin/petugas TIDAK ikut terhapus)
- *
- * Aturan status bulan meniru halaman pembayaran di backend:
- *   lunas      = sudah ada pembayaran bulan itu
- *   menunggak  = bulan sudah lewat & belum dibayar
- *   berjalan   = bulan ini
- *   belum tiba = bulan-bulan berikutnya ("bayar di muka" di sisi petugas)
  */
 session_start();
 include '../koneksi.php';
 
-const SESI_MAKS_DETIK = 900;  // sesi siswa berakhir setelah 15 menit
-const GAGAL_MAKS      = 5;    // salah input sebanyak ini -> dikunci sementara
-const KUNCI_DETIK     = 300;  // lama dikunci: 5 menit
+const SESI_MAKS_DETIK = 900;
+const GAGAL_MAKS      = 5;
+const KUNCI_DETIK     = 300;
 
 $BULAN = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
           'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -35,6 +24,7 @@ if (!function_exists('tglIndo')) {
         return date('j', $t) . ' ' . substr($BULAN[(int) date('n', $t)], 0, 3) . ' ' . date('Y', $t);
     }
 }
+function formatTA($tahun) { $t = (int) $tahun; return $t . '/' . ($t + 1); }
 function balikKeDepan($pesan)
 {
     $_SESSION['cek_error'] = $pesan;
@@ -89,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Gagal: pesan sengaja sama untuk "NISN tidak ada" dan "NIS salah"
     $_SESSION['cek_gagal'] = (int) ($_SESSION['cek_gagal'] ?? 0) + 1;
     if ($_SESSION['cek_gagal'] >= GAGAL_MAKS) {
         $_SESSION['cek_kunci_sampai'] = $sekarang + KUNCI_DETIK;
@@ -110,11 +99,10 @@ if (time() - (int) ($_SESSION['siswa_masuk_pada'] ?? 0) > SESI_MAKS_DETIK) {
     unset($_SESSION['siswa_nisn'], $_SESSION['siswa_masuk_pada']);
     balikKeDepan('Sesi berakhir demi keamanan. Silakan masukkan NISN dan NIS lagi.');
 }
-header('Cache-Control: no-store'); // tombol Back setelah keluar tidak menampilkan data lama
+header('Cache-Control: no-store');
 
 $nisn = $_SESSION['siswa_nisn'];
 
-// --- Data siswa + kelas ---
 $stmt = mysqli_prepare($koneksi, "
     SELECT siswa.nisn, siswa.nis, siswa.nama, siswa.tahun_masuk, kelas.tingkat, kelas.jurusan
     FROM siswa JOIN kelas ON siswa.id_kelas = kelas.id_kelas
@@ -124,21 +112,19 @@ mysqli_stmt_execute($stmt);
 $siswa = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 mysqli_stmt_close($stmt);
 
-if (!$siswa) { // siswa sudah dihapus admin saat sesi berjalan
+if (!$siswa) {
     unset($_SESSION['siswa_nisn'], $_SESSION['siswa_masuk_pada']);
     balikKeDepan('Data siswa tidak ditemukan.');
 }
 
-// --- Tarif SPP per tahun: [tahun => nominal] ---
 $tarif = [];
 $q = mysqli_query($koneksi, "SELECT tahun, nominal FROM spp ORDER BY tahun ASC");
 while ($r = mysqli_fetch_assoc($q)) {
     $tarif[(int) $r['tahun']] = (int) $r['nominal'];
 }
 
-// --- Semua pembayaran siswa ---
-$bayar = [];      // [tahun][nama_bulan] = ['jumlah'=>, 'tgl'=>]
-$riwayat = [];    // daftar transaksi, terbaru di atas
+$bayar = [];
+$riwayat = [];
 $stmt = mysqli_prepare($koneksi, "
     SELECT id_pembayaran, tgl_bayar, bulan_dibayar, tahun_dibayar, jumlah_bayar
     FROM pembayaran WHERE nisn = ?
@@ -157,7 +143,6 @@ while ($r = mysqli_fetch_assoc($q)) {
 }
 mysqli_stmt_close($stmt);
 
-// --- Tahun ajaran yang ditampilkan: rentang valid siswa (masuk .. masuk+2) + tahun yang sudah ada pembayarannya ---
 $masuk = (int) $siswa['tahun_masuk'];
 $daftar_tahun = [];
 for ($t = $masuk; $t <= $masuk + 2; $t++) {
@@ -169,7 +154,6 @@ foreach (array_keys($bayar) as $t) {
 $daftar_tahun = array_keys($daftar_tahun);
 sort($daftar_tahun);
 
-// Tab yang terbuka duluan: tahun berjalan kalau ada, kalau tidak yang paling dekat
 $TAHUN_INI = (int) date('Y');
 $BULAN_INI = (int) date('n');
 $tab_awal = null;
@@ -178,8 +162,7 @@ foreach ($daftar_tahun as $t) {
     if (abs($t - $TAHUN_INI) < $jarak) { $jarak = abs($t - $TAHUN_INI); $tab_awal = $t; }
 }
 
-// --- Hitung status setiap bulan + ringkasan ---
-$data_tahun = [];   // [tahun => ['nominal', 'bulan' => [...], 'lunas' => n]]
+$data_tahun = [];
 $total_lunas = 0;
 $jml_tunggak = 0;
 $rp_tunggak  = 0;
@@ -197,7 +180,7 @@ foreach ($daftar_tahun as $th) {
         if ($sudah > 0 && $sudah >= $nominal) {
             $st = 'lunas'; $lunas++;
         } elseif ($sudah > 0) {
-            $st = 'sebagian';           // sisa data lama (cicilan) — tetap ditampilkan apa adanya
+            $st = 'sebagian';
         } elseif ($lewat) {
             $st = 'tunggak'; $jml_tunggak++; $rp_tunggak += $nominal;
         } elseif ($jalan) {
@@ -228,205 +211,207 @@ $inisial = strtoupper(mb_substr(trim($siswa['nama']), 0, 1));
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>Status SPP — <?= htmlspecialchars($siswa['nama']); ?></title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/frontend.css">
-<style>
-  /* Riwayat dilipat: tampil 5 terbaru dulu, sisanya lewat tombol */
-  .riwayat.lipat .baris-lebih{display:none}
-</style>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/main.css" rel="stylesheet">
+<link href="assets/css/custom.css" rel="stylesheet">
+<style>.riwayat.lipat .baris-lebih{display:none}</style>
 </head>
 <body>
-<div class="wrap" style="max-width:860px">
+<div class="container" style="max-width:900px;padding-top:30px;padding-bottom:40px">
 
-  <header class="topbar">
-    <a href="index.php" class="brand">
-      <span class="brand-mark">
-        <svg width="20" height="20" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="22" height="22" rx="6" stroke="#FBEAF4" stroke-width="1.8"/>
-          <path d="M7 9.5H19M7 13H16M7 16.5H13" stroke="#FBEAF4" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </span>
-      SPP Digital
+  <!-- ===== TOPBAR ===== -->
+  <header class="d-flex justify-content-between align-items-center pb-4 mb-4 border-bottom">
+    <a href="index.php" class="text-decoration-none d-flex align-items-center gap-2">
+      <i class="bi bi-file-earmark-text-fill fs-3" style="color:#DB2777"></i>
+      <span class="h4 mb-0" style="color:#3b0a2b">SPP Digital</span>
     </a>
-    <div class="top-actions">
-      <button type="button" class="btn btn-ghost" onclick="window.print()">Cetak rekap</button>
-      <a href="cek_spp.php?keluar=1" class="btn btn-pink">Keluar</a>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill no-print" onclick="window.print()">
+        <i class="bi bi-printer"></i> Cetak rekap
+      </button>
+      <a href="cek_spp.php?keluar=1" class="btn btn-pink btn-sm rounded-pill">Keluar</a>
     </div>
   </header>
 
   <main>
     <!-- ===== PROFIL ===== -->
-    <section class="profil">
-      <div class="avatar" aria-hidden="true"><?= htmlspecialchars($inisial); ?></div>
-      <div style="position:relative;z-index:1">
-        <h1><?= htmlspecialchars($siswa['nama']); ?></h1>
-        <div class="chips">
-          <span class="chip">Kelas <?= htmlspecialchars($siswa['tingkat'] . ' ' . $siswa['jurusan']); ?></span>
-          <span class="chip">NISN <?= htmlspecialchars($siswa['nisn']); ?></span>
-          <span class="chip">NIS <?= htmlspecialchars($siswa['nis']); ?></span>
-          <span class="chip">Masuk TA <?= formatTA($siswa['tahun_masuk']); ?></span>
+    <section class="d-flex align-items-center gap-3 mb-4">
+      <div class="avatar-circle"><?= htmlspecialchars($inisial); ?></div>
+      <div>
+        <h1 class="h3 mb-2"><?= htmlspecialchars($siswa['nama']); ?></h1>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="badge rounded-pill text-bg-light border">Kelas <?= htmlspecialchars($siswa['tingkat'] . ' ' . $siswa['jurusan']); ?></span>
+          <span class="badge rounded-pill text-bg-light border">NISN <?= htmlspecialchars($siswa['nisn']); ?></span>
+          <span class="badge rounded-pill text-bg-light border">NIS <?= htmlspecialchars($siswa['nis']); ?></span>
+          <span class="badge rounded-pill text-bg-light border">Masuk TA <?= formatTA($siswa['tahun_masuk']); ?></span>
         </div>
       </div>
     </section>
 
     <!-- ===== BANNER STATUS ===== -->
     <?php if (!$daftar_tahun): ?>
-      <div class="banner banner-bad" style="background:var(--mute-bg);color:var(--mute)">
-        Tarif SPP untuk tahun ajaranmu belum diisi oleh admin, jadi status belum bisa ditampilkan.
-      </div>
+      <div class="alert alert-secondary">Tarif SPP untuk tahun ajaranmu belum diisi oleh admin, jadi status belum bisa ditampilkan.</div>
     <?php elseif ($jml_tunggak === 0): ?>
-      <div class="banner banner-ok">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.5l2.7 2.7L16 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Mantap! Tidak ada tunggakan SPP.
+      <div class="alert alert-success d-flex align-items-center gap-2">
+        <i class="bi bi-check-circle-fill"></i> Mantap! Tidak ada tunggakan SPP.
       </div>
     <?php else: ?>
-      <div class="banner banner-bad">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 8v5m0 3.5v.01M10.3 3.9L2.5 17.5A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="alert alert-danger d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
         Ada <?= $jml_tunggak; ?> bulan yang belum dibayar (<?= rp($rp_tunggak); ?>). Silakan selesaikan lewat petugas sekolah.
       </div>
     <?php endif; ?>
 
     <!-- ===== RINGKASAN ===== -->
-    <div class="ringkas">
-      <div><small>Bulan lunas</small><b><?= $total_lunas; ?></b><span>di semua tahun ajaran</span></div>
-      <div><small>Total sudah dibayar</small><b><?= rp($total_dibayar); ?></b><span><?= count($riwayat); ?> transaksi</span></div>
-      <div><small>Menunggak</small><b><?= $jml_tunggak; ?> bulan</b><span><?= $jml_tunggak ? rp($rp_tunggak) : 'Tidak ada'; ?></span></div>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 h-100">
+          <small class="text-muted">Bulan lunas</small>
+          <div class="h3 mb-0" style="color:#DB2777"><?= $total_lunas; ?></div>
+          <small class="text-muted">di semua tahun ajaran</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 h-100">
+          <small class="text-muted">Total sudah dibayar</small>
+          <div class="h3 mb-0" style="color:#DB2777"><?= rp($total_dibayar); ?></div>
+          <small class="text-muted"><?= count($riwayat); ?> transaksi</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 h-100">
+          <small class="text-muted">Menunggak</small>
+          <div class="h3 mb-0" style="color:#DB2777"><?= $jml_tunggak; ?> bulan</div>
+          <small class="text-muted"><?= $jml_tunggak ? rp($rp_tunggak) : 'Tidak ada'; ?></small>
+        </div>
+      </div>
     </div>
 
     <!-- ===== STATUS PER TAHUN AJARAN ===== -->
     <?php if ($daftar_tahun): ?>
-    <section class="panel">
-      <h2>Status per bulan</h2>
+    <section class="card border-0 shadow-sm p-4 mb-4">
+      <h2 class="h5 mb-3">Status per bulan</h2>
 
-      <div class="tabs no-print" role="tablist" aria-label="Tahun ajaran">
+      <ul class="nav nav-pills mb-3 no-print" role="tablist">
         <?php foreach ($daftar_tahun as $th): $aktif = ($th === $tab_awal); ?>
-          <button type="button" class="tab" role="tab" id="tab-<?= $th; ?>" data-target="panel-<?= $th; ?>"
-                  aria-selected="<?= $aktif ? 'true' : 'false'; ?>" aria-controls="panel-<?= $th; ?>">
-            TA <?= formatTA($th); ?>
-          </button>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <?= $aktif ? 'active' : ''; ?>" style="<?= $aktif ? 'background:#DB2777' : ''; ?>"
+                    data-bs-toggle="pill" data-bs-target="#panel-<?= $th; ?>" type="button">
+              TA <?= formatTA($th); ?>
+            </button>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+
+      <div class="tab-content">
+        <?php foreach ($data_tahun as $th => $d): $persen = (int) round($d['lunas'] / 12 * 100); $aktif = ($th === $tab_awal); ?>
+          <div class="tab-pane fade <?= $aktif ? 'show active' : ''; ?>" id="panel-<?= $th; ?>">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">Tahun Ajaran <?= formatTA($th); ?></h3>
+              <small class="text-muted"><?= $d['lunas']; ?> dari 12 bulan lunas &middot; <?= rp($d['nominal']); ?> / bulan</small>
+            </div>
+            <div class="progress mb-3" style="height:8px">
+              <div class="progress-bar" style="width:<?= $persen; ?>%;background:#DB2777"></div>
+            </div>
+
+            <div class="bulan-grid">
+              <?php foreach ($d['bulan'] as $b): [$teks, $kls] = $label_status[$b['status']]; ?>
+                <div class="bln <?= $kls; ?>">
+                  <span class="n"><?= $b['nama']; ?></span>
+                  <span class="s"><?= $teks; ?></span>
+                  <span class="k small">
+                    <?php if ($b['status'] === 'lunas'): ?>
+                      Dibayar <?= tglIndo($b['tgl']); ?>
+                    <?php elseif ($b['status'] === 'sebagian'): ?>
+                      <?= rp($b['sudah']); ?> dari <?= rp($d['nominal']); ?>
+                    <?php elseif ($b['status'] === 'tunggak'): ?>
+                      <?= rp($d['nominal']); ?>
+                    <?php else: ?>
+                      &nbsp;
+                    <?php endif; ?>
+                  </span>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
         <?php endforeach; ?>
       </div>
 
-      <?php foreach ($data_tahun as $th => $d): $persen = (int) round($d['lunas'] / 12 * 100); ?>
-        <div class="tabpanel" id="panel-<?= $th; ?>" role="tabpanel" aria-labelledby="tab-<?= $th; ?>">
-          <div class="ta-head">
-            <h3>Tahun Ajaran <?= formatTA($th); ?></h3>
-            <span><?= $d['lunas']; ?> dari 12 bulan lunas &middot; <?= rp($d['nominal']); ?> / bulan</span>
-          </div>
-          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $persen; ?>"><i style="width:<?= $persen; ?>%"></i></div>
-
-          <div class="bulan">
-            <?php foreach ($d['bulan'] as $b): [$teks, $kls] = $label_status[$b['status']]; ?>
-              <div class="bln <?= $kls; ?>">
-                <span class="n"><?= $b['nama']; ?></span>
-                <span class="s"><?= $teks; ?></span>
-                <span class="k">
-                  <?php if ($b['status'] === 'lunas'): ?>
-                    Dibayar <?= tglIndo($b['tgl']); ?>
-                  <?php elseif ($b['status'] === 'sebagian'): ?>
-                    <?= rp($b['sudah']); ?> dari <?= rp($d['nominal']); ?>
-                  <?php elseif ($b['status'] === 'tunggak'): ?>
-                    <?= rp($d['nominal']); ?>
-                  <?php else: ?>
-                    &nbsp;
-                  <?php endif; ?>
-                </span>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endforeach; ?>
-
-      <div class="legend">
-        <span><i style="background:var(--ok-bg);border:1px solid var(--ok)"></i>Lunas</span>
-        <span><i style="background:var(--bad-bg);border:1px solid var(--bad)"></i>Menunggak</span>
-        <span><i style="background:#fff;border:1.5px solid var(--pink)"></i>Bulan berjalan</span>
-        <span><i style="background:var(--mute-bg);border:1px solid var(--mute)"></i>Belum tiba</span>
+      <div class="legend mt-3 pt-3 border-top">
+        <span><i style="background:#e9f9ee;border:1px solid #bfe9cd"></i>Lunas</span>
+        <span><i style="background:#fdecec;border:1px solid #f6c2c2"></i>Menunggak</span>
+        <span><i style="background:#fff;border:1.5px solid #DB2777"></i>Bulan berjalan</span>
+        <span><i style="background:#f4f4f5;border:1px solid #e4e4e7"></i>Belum tiba</span>
       </div>
     </section>
     <?php endif; ?>
 
     <!-- ===== RIWAYAT ===== -->
-    <section class="panel">
-      <h2>Riwayat pembayaran</h2>
+    <section class="card border-0 shadow-sm p-4">
+      <h2 class="h5 mb-3">Riwayat pembayaran</h2>
       <?php if ($riwayat): ?>
-        <table class="riwayat" id="tabel-riwayat">
-          <thead>
-            <tr><th>Tanggal</th><th>Untuk</th><th>No. Kuitansi</th><th>Jumlah</th></tr>
-          </thead>
-          <tbody>
-            <?php foreach ($riwayat as $i => $r): ?>
-              <tr class="<?= ($i >= 5) ? 'baris-lebih' : ''; ?>">
-                <td><?= tglIndo($r['tgl_bayar']); ?></td>
-                <td>SPP <?= htmlspecialchars($r['bulan_dibayar']); ?> <?= (int) $r['tahun_dibayar']; ?></td>
-                <td class="kw"><?= str_pad($r['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></td>
-                <td class="num"><?= rp($r['jumlah_bayar']); ?></td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table riwayat align-middle" id="tabel-riwayat">
+            <thead>
+              <tr><th>Tanggal</th><th>Untuk</th><th>No. Kuitansi</th><th class="text-end">Jumlah</th></tr>
+            </thead>
+            <tbody>
+              <?php foreach ($riwayat as $i => $r): ?>
+                <tr class="<?= ($i >= 5) ? 'baris-lebih' : ''; ?>">
+                  <td><?= tglIndo($r['tgl_bayar']); ?></td>
+                  <td>SPP <?= htmlspecialchars($r['bulan_dibayar']); ?> <?= (int) $r['tahun_dibayar']; ?></td>
+                  <td class="font-monospace"><?= str_pad($r['id_pembayaran'], 5, '0', STR_PAD_LEFT); ?></td>
+                  <td class="text-end fw-semibold"><?= rp($r['jumlah_bayar']); ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
         <?php if (count($riwayat) > 5): ?>
-          <button type="button" class="btn btn-ghost no-print" id="btn-riwayat"
-                  data-total="<?= count($riwayat); ?>" style="display:none;width:100%;margin-top:14px">
+          <button type="button" class="btn btn-outline-secondary no-print w-100 mt-2" id="btn-riwayat" data-total="<?= count($riwayat); ?>" style="display:none">
             Tampilkan semua (<?= count($riwayat); ?>)
           </button>
         <?php endif; ?>
       <?php else: ?>
-        <div class="kosong">Belum ada pembayaran yang tercatat.</div>
+        <p class="text-muted mb-0">Belum ada pembayaran yang tercatat.</p>
       <?php endif; ?>
     </section>
 
-    <p class="catatan no-print">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="9" stroke="#DB2777" stroke-width="1.8"/><path d="M12 11v5m0-8.5v.01" stroke="#DB2777" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <p class="small text-muted mt-4 no-print">
+      <i class="bi bi-info-circle" style="color:#DB2777"></i>
       Data ini diambil langsung dari catatan petugas. Kalau ada yang tidak sesuai dengan kuitansi yang kamu pegang, tunjukkan kuitansinya ke petugas sekolah. Rekap dicetak pada <?= tglIndo(date('Y-m-d')); ?>.
     </p>
   </main>
 
-  <footer class="foot">
-    <span>&copy; <?= date('Y'); ?> SPP Digital</span>
-    <a href="cek_spp.php?keluar=1">Keluar</a>
+  <footer class="text-center text-muted small pt-4 mt-4 border-top">
+    <span>&copy; <?= date('Y'); ?> SPP Digital</span> &middot;
   </footer>
 </div>
 
+<script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Tanpa JS: semua tahun ajaran tampil bertumpuk. Dengan JS: jadi tab.
-  document.documentElement.classList.add('js');
-  (function () {
-    var tabs = document.querySelectorAll('.tab');
-    var panels = document.querySelectorAll('.tabpanel');
-    function tampil(idPanel) {
-      tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.target === idPanel ? 'true' : 'false'); });
-      panels.forEach(function (p) { p.hidden = (p.id !== idPanel); });
-    }
-    tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () { tampil(tab.dataset.target); });
+  var tabel = document.getElementById('tabel-riwayat');
+  var tombol = document.getElementById('btn-riwayat');
+  if (tabel && tombol) {
+    tabel.classList.add('lipat');
+    tombol.style.display = 'block';
+    tombol.addEventListener('click', function () {
+      var terlipat = tabel.classList.toggle('lipat');
+      tombol.textContent = terlipat ? 'Tampilkan semua (' + tombol.dataset.total + ')' : 'Tutup';
     });
-    var awal = document.querySelector('.tab[aria-selected="true"]');
-    if (awal) { tampil(awal.dataset.target); }
-
-    // Riwayat: lipat ke 5 terbaru, tombol untuk buka semua
-    var tabel = document.getElementById('tabel-riwayat');
-    var tombol = document.getElementById('btn-riwayat');
-    if (tabel && tombol) {
-      tabel.classList.add('lipat');
-      tombol.style.display = 'flex';
-      tombol.addEventListener('click', function () {
-        var terlipat = tabel.classList.toggle('lipat');
-        tombol.textContent = terlipat ? 'Tampilkan semua (' + tombol.dataset.total + ')' : 'Ringkas, tampilkan 5 terbaru saja';
-      });
-      // Saat cetak, semua baris ikut dicetak
-      var dilipatSebelumCetak = false;
-      window.addEventListener('beforeprint', function () {
-        dilipatSebelumCetak = tabel.classList.contains('lipat');
-        tabel.classList.remove('lipat');
-      });
-      window.addEventListener('afterprint', function () {
-        if (dilipatSebelumCetak) { tabel.classList.add('lipat'); }
-      });
-    }
-  })();
+    var dilipatSebelumCetak = false;
+    window.addEventListener('beforeprint', function () {
+      dilipatSebelumCetak = tabel.classList.contains('lipat');
+      tabel.classList.remove('lipat');
+    });
+    window.addEventListener('afterprint', function () {
+      if (dilipatSebelumCetak) { tabel.classList.add('lipat'); }
+    });
+  }
 </script>
 </body>
 </html>

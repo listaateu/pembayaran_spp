@@ -30,7 +30,7 @@ if (isset($_POST['update_petugas'])) {
     // Jika password diisi, update password juga (di-hash). Jika kosong, biarkan password lama.
     if (!empty($_POST['password'])) {
         $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $upd = mysqli_prepare($koneksi, "UPDATE petugas SET username=?, password=?, nama_petugas=?, level=? WHERE id_petugas=?");
+        $upd = mysqli_prepare($koneksi, "UPDATE petugas SET username=?, password=?, nama_petugas=?, level=?, password_updated_at=NOW() WHERE id_petugas=?");
         mysqli_stmt_bind_param($upd, "ssssi", $username, $password, $nama_petugas, $level, $id);
     } else {
         $upd = mysqli_prepare($koneksi, "UPDATE petugas SET username=?, nama_petugas=?, level=? WHERE id_petugas=?");
@@ -62,7 +62,7 @@ include '../components/sidebar.php';
             </div>
             <div class="mb-3">
                 <label class="form-label">Password Baru <small class="text-muted">(Kosongkan jika tidak ingin mengubah password)</small></label>
-                <input type="password" name="password" class="form-control">
+                <input type="password" name="password" class="form-control" autocomplete="new-password" value="">
             </div>
             <div class="mb-3">
                 <label class="form-label">Nama Petugas</label>

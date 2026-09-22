@@ -8,3 +8,7 @@ Stack trace:
 [21-Sep-2026 07:42:57 UTC] Koneksi database gagal: Unknown database 'pembayaran_spp_salah'
 [21-Sep-2026 07:43:02 UTC] Koneksi database gagal: Unknown database 'pembayaran_spp_salah'
 [21-Sep-2026 07:43:20 UTC] Koneksi database gagal: Unknown database 'pembayaran_spp_salah'
+[22-Sep-2026 01:19:20 UTC] PHP Warning:  include(D:\www\pembayaran_spp\backend\petugas/components/header.php): Failed to open stream: No such file or directory in D:\www\pembayaran_spp\backend\petugas\index.php on line 17
+[22-Sep-2026 01:19:20 UTC] PHP Warning:  include(): Failed opening 'D:\www\pembayaran_spp\backend\petugas/components/header.php' for inclusion (include_path='.;C:/laragon/etc/php/pear') in D:\www\pembayaran_spp\backend\petugas\index.php on line 17
+[22-Sep-2026 01:19:20 UTC] PHP Warning:  include(D:\www\pembayaran_spp\backend\petugas/components/footer.php): Failed to open stream: No such file or directory in D:\www\pembayaran_spp\backend\petugas\index.php on line 99
+[22-Sep-2026 01:19:20 UTC] PHP Warning:  include(): Failed opening 'D:\www\pembayaran_spp\backend\petugas/components/footer.php' for inclusion (include_path='.;C:/laragon/etc/php/pear') in D:\www\pembayaran_spp\backend\petugas\index.php on line 99

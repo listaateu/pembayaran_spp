@@ -85,7 +85,9 @@ $extraHeadStyle = '
             main { width: 100% !important; margin: 0 !important; padding: 0 !important; }
         }';
 include __DIR__ . '/components/header.php';
+include __DIR__ . '/components/sidebar.php';
 ?>
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
 <div class="pt-3 pb-2 mb-4 border-bottom no-print">
     <h1 class="h3 fw-bold mb-1" style="color: #db2777;">Detail Pembayaran</h1>

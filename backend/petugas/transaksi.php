@@ -153,7 +153,9 @@ function linkFilter($ubah = [])
 $pageTitle   = 'Entri Transaksi Pembayaran - Petugas';
 $currentPage = 'transaksi.php';
 include __DIR__ . '/components/header.php';
+include __DIR__ . '/components/sidebar.php';
 ?>
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
 <div class="pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h3 fw-bold mb-1" style="color: #db2777;">Transaksi Pembayaran</h1>

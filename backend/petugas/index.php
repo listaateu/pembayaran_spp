@@ -15,12 +15,14 @@ $total_kelas   = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(
 $pageTitle   = 'Dashboard Petugas - Aplikasi Pembayaran SPP';
 $currentPage = 'index.php';
 include __DIR__ . '/components/header.php';
+include __DIR__ . '/components/sidebar.php';
 ?>
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
     <div>
         <h1 class="h3 fw-bold" style="color: #db2777;">Dashboard Petugas</h1>
-        <p class="text-muted mb-0">Selamat datang, <b><?= htmlspecialchars($_SESSION['nama_petugas']); ?></b> (Petugas / Kasir)</p>
+        <p class="text-muted mb-0">Selamat datang, <b><?= htmlspecialchars($_SESSION['nama_petugas']); ?></b></p>
     </div>
     <div class="btn-toolbar mb-2 mb-md-0">
         <span class="badge p-2 fs-6" style="background-color: #db2777;"><i class="bi bi-calendar-event me-1"></i> <?= date('d M Y'); ?></span>

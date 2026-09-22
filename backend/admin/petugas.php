@@ -29,13 +29,14 @@ include '../components/sidebar.php';
                             <th>Username</th>
                             <th>Nama Petugas</th>
                             <th>Level</th>
+                            <th>Terakhir Ganti Password</th>
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php
                         $no = 1;
-                        $data_petugas = mysqli_query($koneksi, "SELECT * FROM petugas ORDER BY id_petugas DESC");
+                        $data_petugas = mysqli_query($koneksi, "SELECT * FROM petugas WHERE level = 'petugas' ORDER BY id_petugas DESC");
                         while ($row = mysqli_fetch_assoc($data_petugas)) {
                         ?>
                             <tr>
@@ -46,6 +47,13 @@ include '../components/sidebar.php';
                                     <span class="badge <?php echo ($row['level'] == 'admin') ? 'bg-danger' : 'bg-info text-dark'; ?>">
                                         <?php echo ucfirst($row['level']); ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($row['password_updated_at'])): ?>
+                                        <small><?php echo date('d M Y, H:i', strtotime($row['password_updated_at'])); ?></small>
+                                    <?php else: ?>
+                                        <small class="text-muted fst-italic">Belum pernah diganti</small>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-center">
                                     <a href="edit_petugas.php?id=<?php echo $row['id_petugas']; ?>" class="btn btn-sm btn-warning text-white px-2 py-1"><i class="bi bi-pencil-square"></i></a>
