@@ -62,12 +62,13 @@ while ($r = mysqli_fetch_assoc($q_list_belum_lunas)) {
     $daftar_belum_lunas[] = $r;
 }
 
-// Bikin link "Bayar Sekarang" yang otomatis mengarah & memfilter ke siswa terkait di halaman Transaksi Pembayaran
-function link_bayar_petugas($row, $tahun_ajaran_aktif) {
+// Bikin link "Bayar Sekarang" yang otomatis mengarah & memfilter ke siswa terkait
+// CATATAN: sesuaikan 'entri_pembayaran.php' kalau nama file entri pembayaran kamu beda.
+function link_bayar_petugas_frontend($row, $tahun_ajaran_aktif) {
     $jurusan_kode = trim(preg_replace('/\s*\d+$/', '', $row['jurusan']));
     $rombel_no = '';
     if (preg_match('/(\d+)\s*$/', $row['jurusan'], $m)) $rombel_no = $m[1];
-    return 'transaksi.php?tingkat=' . urlencode($row['tingkat'])
+    return 'entri_pembayaran.php?tingkat=' . urlencode($row['tingkat'])
         . '&jurusan=' . urlencode($jurusan_kode)
         . '&rombel=' . urlencode($rombel_no)
         . '&nisn=' . urlencode($row['nisn'])
@@ -120,8 +121,6 @@ include __DIR__ . '/components/sidebar.php';
         font-size: 0.85rem;
     }
 </style>
-
-<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
     <div>
@@ -204,8 +203,8 @@ include __DIR__ . '/components/sidebar.php';
                 <div class="small fw-bold text-uppercase mb-2" style="color: rgba(255,255,255,0.85);">
                     <i class="bi bi-clock-history me-1"></i> Waktu Sekarang
                 </div>
-                <div class="jam-besar" id="jamSekarangPetugas">--:--:--</div>
-                <div class="tanggal-kecil mt-1" id="tanggalSekarangPetugas">-</div>
+                <div class="jam-besar" id="jamSekarangPetugasFE">--:--:--</div>
+                <div class="tanggal-kecil mt-1" id="tanggalSekarangPetugasFE">-</div>
             </div>
         </div>
     </div>
@@ -250,7 +249,7 @@ include __DIR__ . '/components/sidebar.php';
                                 <td><?= htmlspecialchars($row['tingkat'] . ' ' . $row['jurusan']); ?></td>
                                 <td><span class="badge bg-danger">Belum Bayar</span></td>
                                 <td class="text-center">
-                                    <a href="<?= link_bayar_petugas($row, $tahun_ajaran_aktif); ?>" class="btn btn-sm text-white" style="background-color:#db2777;">
+                                    <a href="<?= link_bayar_petugas_frontend($row, $tahun_ajaran_aktif); ?>" class="btn btn-sm text-white" style="background-color:#db2777;">
                                         <i class="bi bi-cash-coin me-1"></i>Bayar
                                     </a>
                                 </td>
@@ -285,25 +284,25 @@ include __DIR__ . '/components/sidebar.php';
 
 <script>
     // ================== TAMBAHAN: jam berjalan real-time ==================
-    const hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
-    const bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const hariIndoFE = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
+    const bulanIndoFE = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-    function perbaruiJamPetugas() {
+    function perbaruiJamPetugasFE() {
         const sekarang = new Date();
         const jam   = String(sekarang.getHours()).padStart(2, '0');
         const menit = String(sekarang.getMinutes()).padStart(2, '0');
         const detik = String(sekarang.getSeconds()).padStart(2, '0');
 
-        const elJam = document.getElementById('jamSekarangPetugas');
+        const elJam = document.getElementById('jamSekarangPetugasFE');
         if (elJam) elJam.textContent = jam + ':' + menit + ':' + detik;
 
-        const elTanggal = document.getElementById('tanggalSekarangPetugas');
+        const elTanggal = document.getElementById('tanggalSekarangPetugasFE');
         if (elTanggal) {
-            elTanggal.textContent = hariIndo[sekarang.getDay()] + ', ' + sekarang.getDate() + ' ' + bulanIndo[sekarang.getMonth()] + ' ' + sekarang.getFullYear();
+            elTanggal.textContent = hariIndoFE[sekarang.getDay()] + ', ' + sekarang.getDate() + ' ' + bulanIndoFE[sekarang.getMonth()] + ' ' + sekarang.getFullYear();
         }
     }
-    perbaruiJamPetugas();
-    setInterval(perbaruiJamPetugas, 1000);
+    perbaruiJamPetugasFE();
+    setInterval(perbaruiJamPetugasFE, 1000);
 </script>
 
 <?php include __DIR__ . '/components/footer.php'; ?>

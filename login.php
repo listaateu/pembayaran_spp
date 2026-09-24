@@ -28,7 +28,7 @@ if (isset($_POST['login'])) {
                 header("location: backend/admin/index.php");
                 exit();
             } else if ($row['level'] == 'petugas') {
-                header("location: backend/petugas/index.php");
+                header("location: frontend/petugas/index.php");
                 exit();
             }
         } else {

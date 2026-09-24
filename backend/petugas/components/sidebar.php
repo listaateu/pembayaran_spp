@@ -37,6 +37,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         </li>
 
         <li class="nav-item mt-4 pt-3 border-top border-pink-subtle">
+            <a href="../../frontend/petugas/index.php" class="nav-link fw-semibold py-2 px-3 rounded text-dark">
+                <i class="bi bi-layout-text-window-reverse me-2"></i> Tampilan Frontend
+            </a>
+        </li>
+        <li class="nav-item mb-2">
             <a href="#" data-bs-toggle="modal" data-bs-target="#modalLogout" class="nav-link text-danger fw-semibold py-2 px-3 rounded"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
         </li>
     </ul>

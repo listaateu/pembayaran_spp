@@ -39,4 +39,4 @@ $config = $semua_config[APP_ENV] ?? $semua_config['production'];
 error_reporting(E_ALL);
 ini_set('display_errors', $config['tampilkan_error'] ? '1' : '0');
 ini_set('log_errors', '1');
-ini_set('error_log', __DIR__ . '/error.log');
+ini_set('error_log', __DIR__ . '/logs/error.log');

@@ -1,0 +1,135 @@
+/* frontend/assets/css/status-spp.css — Gaya khusus halaman status SPP siswa
+   LETAKKAN DI: pembayaran_spp/frontend/assets/css/status-spp.css */
+
+:root{
+  --ink:#2b1420; --muted:#8a6f7a;
+  --plum:#4a0f33; --plum-2:#7c1450; --pink:#db2777; --pink-soft:#fbeaf2;
+  --cream:#fdeef4; --line:#f3d9e4;
+  --green:#0f7a44; --green-bg:#e6f7ee; --green-line:#bfe6cf;
+  --red:#b3221f; --red-bg:#fdecec; --red-line:#f3c3c2;
+  --amber:#a5590a; --amber-bg:#fef2e2; --amber-line:#f4d9ab;
+}
+@media (prefers-reduced-motion: no-preference){
+  .hero{animation:heroIn .5s ease both}
+}
+@keyframes heroIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+body{background:var(--cream);color:var(--ink);font-family:'Inter',system-ui,sans-serif}
+.riwayat.lipat .baris-lebih{display:none}
+
+/* ===== HERO ===== */
+.hero{
+  background:linear-gradient(135deg,var(--plum) 0%,var(--plum-2) 55%,var(--pink) 100%);
+  border-radius:28px; padding:28px 32px 30px; color:#fff;
+  box-shadow:0 18px 40px -20px rgba(74,15,51,.55); margin-bottom:28px;
+}
+.hero-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand i{font-size:22px}
+.brand span{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;letter-spacing:.2px}
+.hero-actions .btn{border-radius:999px;font-size:.82rem}
+.hero-actions .btn-ghost{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff}
+.hero-actions .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff}
+.hero-actions .btn-pink{background:#fff;border:1px solid #fff;color:var(--plum);font-weight:600}
+.hero-actions .btn-pink:hover{background:#fce7f0;color:var(--plum)}
+
+.hero-profile{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.avatar-circle{
+  width:56px;height:56px;border-radius:50%;background:#fff;color:var(--plum);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:600;font-size:1.4rem;flex-shrink:0;
+}
+.hero-profile h1{font-family:'Fraunces',serif;font-weight:600;font-size:1.65rem;margin:0 0 8px;color:#fff !important}
+.hero-badges{display:flex;flex-wrap:wrap;gap:8px}
+.hero-badges .badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+  color:#fff;font-weight:500;font-size:.78rem;padding:.4em .8em}
+
+.hero-status{
+  display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.28);border-radius:14px;padding:14px 16px;font-size:.93rem;
+}
+.hero-status i{font-size:1.2rem;flex-shrink:0}
+.hero-status.is-warn i{color:#ffd9c2}
+.hero-status.is-ok i{color:#b6f0cf}
+.hero-status b{font-family:'Fraunces',serif;font-weight:600}
+
+/* ===== STAT STRIP (tanpa kotak, cukup garis pemisah) ===== */
+.stat-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border:1px solid var(--line);border-radius:18px;background:#fff;
+  margin-bottom:28px;overflow:hidden;
+}
+.stat{padding:20px 22px;border-left:1px solid var(--line)}
+.stat:first-child{border-left:none}
+.stat-label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.stat-num{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:1.9rem;
+  color:var(--plum);line-height:1.15;font-variant-numeric:tabular-nums}
+.stat-sub{display:block;font-size:.78rem;color:var(--muted);margin-top:4px}
+
+/* ===== KARTU SEKSI ===== */
+.card{border:1px solid var(--line) !important;box-shadow:none !important;border-radius:18px !important}
+.card h2{font-family:'Fraunces',serif;font-weight:600}
+
+.nav-pills .nav-link{border-radius:999px;font-size:.85rem;color:var(--plum);font-weight:500}
+.nav-pills .nav-link.active{background:var(--pink) !important;color:#fff}
+
+.progress{border-radius:999px;background:var(--pink-soft)}
+.progress-bar{background:linear-gradient(90deg,var(--plum-2),var(--pink)) !important}
+
+/* ===== GRID BULAN ===== */
+.bulan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.bln{border-radius:12px;padding:12px 14px;border:1px solid var(--line);border-left:4px solid var(--line);background:#fff}
+.bln .n{display:flex;align-items:center;gap:6px;font-weight:600;font-size:.92rem;margin-bottom:2px}
+.bln .s{display:block;font-size:.76rem;margin-bottom:4px}
+.bln .k{color:var(--muted)}
+
+.bln-lunas{background:var(--green-bg);border-left-color:var(--green)}
+.bln-lunas .n,.bln-lunas .s{color:var(--green)}
+.bln-tunggak{background:var(--red-bg);border-left-color:var(--red)}
+.bln-tunggak .n,.bln-tunggak .s{color:var(--red)}
+.bln-jalan{background:#fff;border-left-color:var(--pink)}
+.bln-jalan .n,.bln-jalan .s{color:var(--pink)}
+.bln-depan{background:#faf9fa;border-left-color:#d8ccd2}
+.bln-depan .n,.bln-depan .s{color:var(--muted)}
+.bln-sebagian{background:var(--amber-bg);border-left-color:var(--amber)}
+.bln-sebagian .n,.bln-sebagian .s{color:var(--amber)}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+
+/* ===== TABEL RIWAYAT ===== */
+.table.riwayat thead th{font-family:'Fraunces',serif;font-weight:600;color:var(--plum);
+  border-bottom:2px solid var(--plum);font-size:.85rem}
+.table.riwayat tbody tr:nth-child(even){background:#fdf8fa}
+.table.riwayat td{font-size:.9rem}
+
+/* ===== MODAL KELUAR ===== */
+#modalKeluar .modal-content{border-radius:22px}
+#modalKeluar .btn-pink{background:var(--pink);border-color:var(--pink)}
+#modalKeluar .btn-pink:hover{background:#c11f68;border-color:#c11f68}
+
+/* ===== CETAK ===== */
+@media print{
+  .hero{
+    background:var(--plum) !important;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; color-adjust:exact;
+    box-shadow:none !important;
+  }
+  .hero-profile h1{color:#fff !important}
+  .hero-badges .badge{background:rgba(255,255,255,.25) !important;color:#fff !important;
+    border-color:rgba(255,255,255,.5) !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .hero-status{background:rgba(255,255,255,.18) !important;color:#fff !important;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .hero-status i{color:#fff !important}
+  .bln{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+
+/* ===== HP ===== */
+@media (max-width:576px){
+  .hero{padding:22px 18px 24px;border-radius:20px}
+  .hero-top{flex-wrap:wrap;gap:10px}
+  .stat-strip{grid-template-columns:1fr}
+  .stat{border-left:none;border-top:1px solid var(--line)}
+  .stat:first-child{border-top:none}
+}

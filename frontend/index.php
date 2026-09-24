@@ -29,7 +29,7 @@ if ($q2) { $total_transaksi = (int) mysqli_fetch_assoc($q2)['n']; }
 // Kalau admin/petugas sedang login, tombol atas diganti jadi "Dashboard"
 $level_staf = $_SESSION['level'] ?? '';
 $staf_login = in_array($level_staf, ['admin', 'petugas'], true);
-$url_dashboard = ($level_staf === 'admin') ? '../backend/admin/index.php' : '../backend/petugas/index.php';
+$url_dashboard = ($level_staf === 'admin') ? '../backend/admin/index.php' : 'petugas/index.php';
 
 // Kalau siswa masih punya sesi cek status yang aktif
 $siswa_aktif = !empty($_SESSION['siswa_nisn']);
@@ -243,8 +243,9 @@ function formatTA($tahun) { $t = (int) $tahun; return $t . '/' . ($t + 1); }
   </main>
 
   <footer class="footer text-center py-4" style="background:#3b0a2b;color:#fff">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+    <div class="container d-flex flex-column flex-md-row justify-content-center align-items-center gap-2 gap-md-3">
       <span>&copy; <?= date('Y'); ?> SPP Digital &middot; Aplikasi Pembayaran SPP Sekolah</span>
+      <span class="d-none d-md-inline text-white-50">&middot;</span>
       <a href="../login.php" class="text-white-50">Login admin / petugas</a>
     </div>
   </footer>

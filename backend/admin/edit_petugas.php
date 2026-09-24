@@ -18,14 +18,11 @@ if (!$petugas) {
 }
 
 if (isset($_POST['update_petugas'])) {
-    $username = trim($_POST['username']);
-    $nama_petugas = trim($_POST['nama_petugas']);
-    $level = $_POST['level'];
-
-    if (!in_array($level, ['admin', 'petugas'], true)) {
-        echo "<script>alert('Level tidak valid!'); window.location='petugas.php';</script>";
-        exit();
-    }
+    // Username & nama tidak lagi bisa diubah lewat form ini, level selalu "petugas".
+    // Nilai dari DB dipakai apa adanya supaya query update tetap konsisten.
+    $username = $petugas['username'];
+    $nama_petugas = $petugas['nama_petugas'];
+    $level = 'petugas';
 
     // Jika password diisi, update password juga (di-hash). Jika kosong, biarkan password lama.
     if (!empty($_POST['password'])) {
@@ -58,7 +55,8 @@ include '../components/sidebar.php';
         <form method="POST" action="">
             <div class="mb-3">
                 <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($petugas['username']); ?>" required>
+                <input type="text" class="form-control" value="<?php echo htmlspecialchars($petugas['username']); ?>" readonly disabled style="background:#f1f1f1">
+                <div class="form-text">Username tidak bisa diubah.</div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Password Baru <small class="text-muted">(Kosongkan jika tidak ingin mengubah password)</small></label>
@@ -66,14 +64,8 @@ include '../components/sidebar.php';
             </div>
             <div class="mb-3">
                 <label class="form-label">Nama Petugas</label>
-                <input type="text" name="nama_petugas" class="form-control" value="<?php echo htmlspecialchars($petugas['nama_petugas']); ?>" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Level</label>
-                <select name="level" class="form-select" required>
-                    <option value="admin" <?php echo ($petugas['level'] == 'admin') ? 'selected' : ''; ?>>Admin</option>
-                    <option value="petugas" <?php echo ($petugas['level'] == 'petugas') ? 'selected' : ''; ?>>Petugas</option>
-                </select>
+                <input type="text" class="form-control" value="<?php echo htmlspecialchars($petugas['nama_petugas']); ?>" readonly disabled style="background:#f1f1f1">
+                <div class="form-text">Nama petugas tidak bisa diubah.</div>
             </div>
             <button type="submit" name="update_petugas" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Update Petugas</button>
             <a href="petugas.php" class="btn btn-secondary">Kembali</a>

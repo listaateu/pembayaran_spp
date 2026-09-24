@@ -10,13 +10,7 @@ if (isset($_POST['simpan'])) {
     $username = trim($_POST['username']);
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $nama_petugas = trim($_POST['nama_petugas']);
-    $level = $_POST['level'];
-
-    // Batasi level hanya ke nilai yang sah, jangan percaya input mentah
-    if (!in_array($level, ['admin', 'petugas'], true)) {
-        echo "<script>alert('Level tidak valid!'); window.location='petugas.php';</script>";
-        exit();
-    }
+    $level = 'petugas'; // selalu petugas, tidak ada pilihan level lain
 
     // Prepared statement supaya aman dari SQL Injection
     $stmt = mysqli_prepare($koneksi, "INSERT INTO petugas (username, password, nama_petugas, level) VALUES (?, ?, ?, ?)");
@@ -53,13 +47,6 @@ include '../components/sidebar.php';
                 <div class="mb-3">
                     <label class="form-label">Nama Petugas</label>
                     <input type="text" name="nama_petugas" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Level</label>
-                    <select name="level" class="form-select" required>
-                        <option value="admin">Admin</option>
-                        <option value="petugas">Petugas</option>
-                    </select>
                 </div>
                 <button type="submit" name="simpan" class="btn btn-primary" style="background-color: #db2777; border-color: #db2777;"><i class="bi bi-save me-1"></i> Simpan Data</button>
                 <a href="petugas.php" class="btn btn-secondary">Kembali</a>
