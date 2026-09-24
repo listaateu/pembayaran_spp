@@ -255,7 +255,7 @@ $satu_transaksi = (count($daftar) === 1);
             btn.disabled = true;
             btn.innerText = "Mengirim...";
 
-            fetch("../kirim_wa.php", {
+            fetch("../../backend/kirim_wa.php", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded"
@@ -281,13 +281,16 @@ $satu_transaksi = (count($daftar) === 1);
                 });
         }
 
-               // Bunyi "ting" saat kuitansi muncul, lalu auto-buka dialog cetak
+        // Bunyi "ting" saat kuitansi muncul, lalu auto-buka dialog cetak
         window.addEventListener('load', function() {
             try {
                 const bunyi = new Audio('../../media/sukses.wav');
-                bunyi.play().catch(function() { /* kalau browser memblokir suara, abaikan saja */ });
+                bunyi.play().catch(function() {
+                    /* kalau browser memblokir suara, abaikan saja */ });
             } catch (e) {}
-            setTimeout(function() { window.print(); }, 400);
+            setTimeout(function() {
+                window.print();
+            }, 400);
         });
     </script>
 </body>

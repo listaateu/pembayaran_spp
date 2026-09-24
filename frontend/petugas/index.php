@@ -12,68 +12,104 @@ $total_siswa   = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(
 $total_petugas = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS jml FROM petugas"))['jml'] ?? 0);
 $total_kelas   = (int) (mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS jml FROM kelas"))['jml'] ?? 0);
 
-// ================== TAMBAHAN: Siswa Belum Lunas (bulan berjalan) + search + pagination ==================
-$DAFTAR_BULAN = [
-    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-];
-$tahun_sekarang    = (int) date('Y');
-$bulan_angka       = (int) date('n');
+// ================== Siswa Belum Lunas (semua tahun ajaran, bukan cuma bulan ini) ==================
+$bulan_arr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+$tahun_sekarang     = (int) date('Y');
+$bulan_angka        = (int) date('n');
 // Tahun ajaran berjalan dianggap mulai bulan Juli (umum di sekolah Indonesia)
 $tahun_ajaran_aktif = ($bulan_angka >= 7) ? $tahun_sekarang : $tahun_sekarang - 1;
-$nama_bulan_ini     = $DAFTAR_BULAN[$bulan_angka];
-$nama_bulan_esc     = mysqli_real_escape_string($koneksi, $nama_bulan_ini);
 
-$cari_lunas = isset($_GET['cari_lunas']) ? trim($_GET['cari_lunas']) : '';
-$cari_esc   = mysqli_real_escape_string($koneksi, $cari_lunas);
-$kondisi_cari = '';
-if ($cari_lunas !== '') {
-    $kondisi_cari = "AND (siswa.nis LIKE '%$cari_esc%' OR siswa.nisn LIKE '%$cari_esc%' OR siswa.nama LIKE '%$cari_esc%' OR kelas.tingkat LIKE '%$cari_esc%' OR kelas.jurusan LIKE '%$cari_esc%')";
+// Ambil nominal SPP per tahun (tahun => nominal), urut terbaru dulu
+$tahun_nominal = [];
+$q_tahun_spp = mysqli_query($koneksi, "SELECT tahun, nominal FROM spp ORDER BY tahun DESC");
+while ($t = mysqli_fetch_assoc($q_tahun_spp)) {
+    $tahun_nominal[(int) $t['tahun']] = (int) $t['nominal'];
 }
 
-$query_dasar_belum_lunas = "FROM siswa
+// Ambil semua siswa + kelasnya
+$q_semua_siswa = mysqli_query($koneksi, "
+    SELECT siswa.nisn, siswa.nis, siswa.nama, kelas.tingkat, kelas.jurusan
+    FROM siswa
     JOIN kelas ON siswa.id_kelas = kelas.id_kelas
-    LEFT JOIN pembayaran ON pembayaran.nisn = siswa.nisn
-        AND pembayaran.tahun_dibayar = '$tahun_ajaran_aktif'
-        AND pembayaran.bulan_dibayar = '$nama_bulan_esc'
-    WHERE siswa.tahun_masuk <= $tahun_ajaran_aktif
-        AND (siswa.tahun_masuk + 2) >= $tahun_ajaran_aktif
-        AND pembayaran.id_pembayaran IS NULL
-        $kondisi_cari";
-
-$q_total_belum_lunas = mysqli_query($koneksi, "SELECT COUNT(DISTINCT siswa.nisn) AS total $query_dasar_belum_lunas");
-$total_belum_lunas   = (int) (mysqli_fetch_assoc($q_total_belum_lunas)['total'] ?? 0);
-
-$per_halaman_lunas = 10;
-$total_halaman_lunas = max(1, (int) ceil($total_belum_lunas / $per_halaman_lunas));
-$halaman_lunas = isset($_GET['hal_lunas']) ? (int) $_GET['hal_lunas'] : 1;
-if ($halaman_lunas < 1) $halaman_lunas = 1;
-if ($halaman_lunas > $total_halaman_lunas) $halaman_lunas = $total_halaman_lunas;
-$offset_lunas = ($halaman_lunas - 1) * $per_halaman_lunas;
-
-$q_list_belum_lunas = mysqli_query($koneksi, "SELECT DISTINCT siswa.nisn, siswa.nis, siswa.nama, kelas.tingkat, kelas.jurusan
-    $query_dasar_belum_lunas
     ORDER BY siswa.nama ASC
-    LIMIT $per_halaman_lunas OFFSET $offset_lunas");
+");
 
-$daftar_belum_lunas = [];
-while ($r = mysqli_fetch_assoc($q_list_belum_lunas)) {
-    $daftar_belum_lunas[] = $r;
+$daftar_belum_lunas_semua = [];
+
+while ($s = mysqli_fetch_assoc($q_semua_siswa)) {
+    $tingkat = (int) $s['tingkat'];
+    // Kelas 10 -> 1 tahun ajaran, 11 -> 2 tahun, 12 -> 3 tahun (sama kayak detail_history.php)
+    $jumlah_tahun = max($tingkat - 9, 1);
+    $tahun_untuk_siswa = array_slice($tahun_nominal, 0, $jumlah_tahun, true);
+
+    $total_wajib  = $jumlah_tahun * 12;
+    $jumlah_lunas = 0;
+
+    foreach ($tahun_untuk_siswa as $tahun => $nominal) {
+        // Ambil total bayar per bulan untuk tahun ini sekaligus (1 query per tahun per siswa)
+        $q_bayar = mysqli_query($koneksi, "
+            SELECT bulan_dibayar, SUM(jumlah_bayar) AS total
+            FROM pembayaran
+            WHERE nisn = '" . mysqli_real_escape_string($koneksi, $s['nisn']) . "'
+              AND tahun_dibayar = '$tahun'
+            GROUP BY bulan_dibayar
+        ");
+        $bayar_per_bulan = [];
+        while ($b = mysqli_fetch_assoc($q_bayar)) {
+            $bayar_per_bulan[$b['bulan_dibayar']] = (int) $b['total'];
+        }
+        foreach ($bulan_arr as $bln) {
+            $sudah = $bayar_per_bulan[$bln] ?? 0;
+            if ($sudah >= $nominal) $jumlah_lunas++;
+        }
+    }
+
+    $persen = $total_wajib > 0 ? round($jumlah_lunas / $total_wajib * 100) : 0;
+
+    // Kalau udah lunas penuh, skip (gak usah ditampilin)
+    if ($persen >= 100) continue;
+
+    $daftar_belum_lunas_semua[] = [
+        'nisn'         => $s['nisn'],
+        'nis'          => $s['nis'],
+        'nama'         => $s['nama'],
+        'tingkat'      => $s['tingkat'],
+        'jurusan'      => $s['jurusan'],
+        'jumlah_lunas' => $jumlah_lunas,
+        'total_wajib'  => $total_wajib,
+        'persen'       => $persen,
+    ];
 }
 
-// Bikin link "Bayar Sekarang" yang otomatis mengarah & memfilter ke siswa terkait
-// CATATAN: sesuaikan 'entri_pembayaran.php' kalau nama file entri pembayaran kamu beda.
-function link_bayar_petugas_frontend($row, $tahun_ajaran_aktif) {
+// Urutkan: yang bayarnya PALING SEDIKIT (persen paling kecil) di paling atas
+usort($daftar_belum_lunas_semua, function ($a, $b) {
+    return $a['persen'] <=> $b['persen'];
+});
+
+// Catatan: pencarian sekarang LIVE di browser (JavaScript), bukan reload halaman lagi.
+// Jadi semua siswa belum lunas dikirim sekaligus ke tabel, lalu difilter/disembunyikan
+// pakai JS pas user ngetik di kolom pencarian (mirip halaman History Status Siswa di admin).
+$total_belum_lunas  = count($daftar_belum_lunas_semua);
+$daftar_belum_lunas = $daftar_belum_lunas_semua;
+
+function warnaProgressFE($persen)
+{
+    if ($persen >= 60) return '#65a30d';
+    if ($persen >= 30) return '#f59e0b';
+    return '#f43f5e';
+}
+
+// Link "Bayar Sekarang" -> mengarah ke transaksi.php (halaman entri pembayaran petugas yang sebenarnya)
+function link_bayar_petugas_frontend($row) {
     $jurusan_kode = trim(preg_replace('/\s*\d+$/', '', $row['jurusan']));
     $rombel_no = '';
     if (preg_match('/(\d+)\s*$/', $row['jurusan'], $m)) $rombel_no = $m[1];
-    return 'entri_pembayaran.php?tingkat=' . urlencode($row['tingkat'])
+    return 'transaksi.php?tingkat=' . urlencode($row['tingkat'])
         . '&jurusan=' . urlencode($jurusan_kode)
         . '&rombel=' . urlencode($rombel_no)
         . '&nisn=' . urlencode($row['nisn'])
-        . '&tahun=' . $tahun_ajaran_aktif
-        . '&f=1';
+        . '&f=1#bayar';
 }
 
 $pageTitle   = 'Dashboard Petugas - Aplikasi Pembayaran SPP';
@@ -83,7 +119,7 @@ include __DIR__ . '/components/sidebar.php';
 ?>
 
 <style>
-    /* ================== TAMBAHAN: widget jam & awan ================== */
+    /* ================== widget jam & awan ================== */
     .widget-jam {
         position: relative;
         overflow: hidden;
@@ -119,6 +155,16 @@ include __DIR__ . '/components/sidebar.php';
     .widget-jam .tanggal-kecil {
         color: rgba(255, 255, 255, 0.85);
         font-size: 0.85rem;
+    }
+
+    /* ================== progress mini (samain sama history_siswa.php) ================== */
+    .progress-mini {
+        width: 100%; height: 8px; border-radius: 999px;
+        background: #f1f1f4; overflow: hidden;
+    }
+    .progress-mini-isi {
+        height: 100%; border-radius: 999px;
+        transition: width .3s ease;
     }
 </style>
 
@@ -191,7 +237,7 @@ include __DIR__ . '/components/sidebar.php';
         </div>
     </div>
 
-    <!-- ================== TAMBAHAN: Widget Jam & Awan ================== -->
+    <!-- ================== Widget Jam & Awan ================== -->
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm h-100 widget-jam">
             <div class="awan-area">
@@ -210,80 +256,166 @@ include __DIR__ . '/components/sidebar.php';
     </div>
 </div>
 
-<!-- ================== TAMBAHAN: Siswa Belum Lunas Bulan Ini ================== -->
+<!-- ================== Siswa Belum Lunas (semua tahun ajaran, urut dari paling sedikit bayar) ================== -->
 <div class="card border-0 shadow-sm mt-3">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h5 class="fw-bold mb-0" style="color: #db2777;">
-                <i class="bi bi-exclamation-circle me-2"></i>Siswa Belum Lunas &middot; <?= $nama_bulan_ini; ?> <?= formatTA($tahun_ajaran_aktif); ?>
-                <span class="badge rounded-pill ms-1" style="background-color:#fee2e2; color:#dc2626;"><?= $total_belum_lunas; ?></span>
+                <i class="bi bi-exclamation-circle me-2"></i>Siswa Belum Lunas &middot; <?= formatTA($tahun_ajaran_aktif); ?>
+                <span class="badge rounded-pill ms-1" style="background-color:#fee2e2; color:#dc2626;" id="badge-jumlah-lunas"><?= $total_belum_lunas; ?></span>
             </h5>
-            <form method="GET" class="d-flex gap-2">
-                <input type="text" name="cari_lunas" class="form-control form-control-sm" style="width:220px;" placeholder="Cari NIS / NISN / Nama / Kelas..." value="<?= htmlspecialchars($cari_lunas); ?>">
-                <button type="submit" class="btn btn-sm text-white" style="background-color:#db2777;"><i class="bi bi-search"></i></button>
-                <?php if ($cari_lunas !== ''): ?>
-                    <a href="index.php" class="btn btn-sm btn-outline-secondary" title="Reset pencarian"><i class="bi bi-x-circle"></i></a>
-                <?php endif; ?>
-            </form>
+            <div class="input-group input-group-sm" style="max-width:260px;">
+                <span class="input-group-text bg-white" style="color:#db2777;"><i class="bi bi-search"></i></span>
+                <input type="text" id="cari-belum-lunas" class="form-control" placeholder="Cari NIS / NISN / Nama / Kelas..." autocomplete="off">
+            </div>
         </div>
 
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="tabel-belum-lunas">
                 <thead style="background-color: #fdf2f8; color: #db2777;">
                     <tr>
                         <th>No</th>
                         <th>NIS</th>
                         <th>Nama Siswa</th>
                         <th>Kelas</th>
-                        <th>Status</th>
+                        <th style="min-width:180px;">Bulan Tercatat Bayar</th>
                         <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (count($daftar_belum_lunas) > 0): ?>
-                        <?php $no = $offset_lunas + 1; foreach ($daftar_belum_lunas as $row): ?>
-                            <tr>
-                                <td><?= $no++; ?></td>
+                        <?php $no = 1; foreach ($daftar_belum_lunas as $row):
+                            $warna = warnaProgressFE($row['persen']);
+                            $kata_cari = strtolower($row['nis'] . ' ' . $row['nisn'] . ' ' . $row['nama'] . ' ' . $row['tingkat'] . ' ' . $row['jurusan']);
+                        ?>
+                            <tr data-cari="<?= htmlspecialchars($kata_cari); ?>">
+                                <td class="kolom-no"><?= $no++; ?></td>
                                 <td><?= htmlspecialchars($row['nis']); ?></td>
                                 <td class="fw-semibold"><?= htmlspecialchars($row['nama']); ?></td>
                                 <td><?= htmlspecialchars($row['tingkat'] . ' ' . $row['jurusan']); ?></td>
-                                <td><span class="badge bg-danger">Belum Bayar</span></td>
+                                <td>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="fw-semibold" style="color:<?= $warna; ?>;"><?= $row['jumlah_lunas']; ?>/<?= $row['total_wajib']; ?> bulan</span>
+                                        <span class="text-muted"><?= $row['persen']; ?>%</span>
+                                    </div>
+                                    <div class="progress-mini">
+                                        <div class="progress-mini-isi" style="width:<?= $row['persen']; ?>%; background:<?= $warna; ?>;"></div>
+                                    </div>
+                                </td>
                                 <td class="text-center">
-                                    <a href="<?= link_bayar_petugas_frontend($row, $tahun_ajaran_aktif); ?>" class="btn btn-sm text-white" style="background-color:#db2777;">
+                                    <a href="<?= link_bayar_petugas_frontend($row); ?>" class="btn btn-sm text-white" style="background-color:#db2777;">
                                         <i class="bi bi-cash-coin me-1"></i>Bayar
                                     </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <tr><td colspan="6" class="text-center py-3 text-muted">🎉 Semua siswa sudah lunas bulan ini!</td></tr>
+                        <tr><td colspan="6" class="text-center py-3 text-muted">🎉 Semua siswa sudah lunas!</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
+            <div id="belum-lunas-kosong" class="text-center text-muted py-4" style="display:none;">
+                <div style="font-size:1.6rem;">🔍</div>
+                Tidak ada siswa yang cocok dengan pencarian.
+            </div>
         </div>
-
-        <?php if ($total_halaman_lunas > 1): ?>
-            <nav class="mt-3">
-                <ul class="pagination pagination-sm justify-content-center mb-0">
-                    <li class="page-item <?= $halaman_lunas <= 1 ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?hal_lunas=<?= $halaman_lunas - 1; ?>&cari_lunas=<?= urlencode($cari_lunas); ?>">&laquo;</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $total_halaman_lunas; $i++): ?>
-                        <li class="page-item <?= $i == $halaman_lunas ? 'active' : ''; ?>">
-                            <a class="page-link" href="?hal_lunas=<?= $i; ?>&cari_lunas=<?= urlencode($cari_lunas); ?>" <?= $i == $halaman_lunas ? 'style="background-color:#db2777;border-color:#db2777;"' : ''; ?>><?= $i; ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?= $halaman_lunas >= $total_halaman_lunas ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?hal_lunas=<?= $halaman_lunas + 1; ?>&cari_lunas=<?= urlencode($cari_lunas); ?>">&raquo;</a>
-                    </li>
-                </ul>
-            </nav>
-        <?php endif; ?>
+        <nav class="mt-3" id="paginasi-belum-lunas"></nav>
     </div>
 </div>
 
+<style>
+    .pg-btn {
+        border: none; background: #fff; color: #9d174d;
+        padding: 5px 12px; border-radius: 8px; font-size: .82rem; font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    }
+    .pg-btn.aktif { background: #db2777; color: #fff; }
+    .pg-btn:disabled { opacity: .4; cursor: default; }
+</style>
+
 <script>
-    // ================== TAMBAHAN: jam berjalan real-time ==================
+    // ================== Live filter + pagination "Siswa Belum Lunas" (tanpa reload halaman) ==================
+    (function () {
+        var input        = document.getElementById('cari-belum-lunas');
+        var semuaBaris    = Array.from(document.querySelectorAll('#tabel-belum-lunas tbody tr[data-cari]'));
+        var pesanKosong   = document.getElementById('belum-lunas-kosong');
+        var badgeJumlah   = document.getElementById('badge-jumlah-lunas');
+        var kontainerPage = document.getElementById('paginasi-belum-lunas');
+        if (!input || semuaBaris.length === 0) return;
+
+        var PER_HALAMAN = 10;
+        var halamanAktif = 1;
+
+        function ambilYangCocok() {
+            var kata = input.value.trim().toLowerCase();
+            return semuaBaris.filter(function (tr) {
+                return kata === '' || tr.dataset.cari.indexOf(kata) !== -1;
+            });
+        }
+
+        function render() {
+            var cocok = ambilYangCocok();
+            var totalHalaman = Math.max(1, Math.ceil(cocok.length / PER_HALAMAN));
+            if (halamanAktif > totalHalaman) halamanAktif = totalHalaman;
+            if (halamanAktif < 1) halamanAktif = 1;
+
+            var mulai = (halamanAktif - 1) * PER_HALAMAN;
+            var akhir  = mulai + PER_HALAMAN;
+
+            // Sembunyikan semua dulu, lalu tampilkan cuma yang cocok & di halaman aktif
+            semuaBaris.forEach(function (tr) { tr.style.display = 'none'; });
+            cocok.slice(mulai, akhir).forEach(function (tr, i) {
+                tr.style.display = '';
+                var selNo = tr.querySelector('.kolom-no');
+                if (selNo) selNo.textContent = mulai + i + 1;
+            });
+
+            if (badgeJumlah) badgeJumlah.textContent = cocok.length;
+            pesanKosong.style.display = (cocok.length === 0) ? 'block' : 'none';
+
+            // Render tombol halaman
+            kontainerPage.innerHTML = '';
+            if (totalHalaman > 1) {
+                var ul = document.createElement('ul');
+                ul.className = 'pagination pagination-sm justify-content-center mb-0';
+
+                function buatTombol(label, halaman, nonaktif, aktif) {
+                    var li = document.createElement('li');
+                    li.className = 'page-item';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'pg-btn' + (aktif ? ' aktif' : '');
+                    btn.textContent = label;
+                    btn.disabled = !!nonaktif;
+                    btn.addEventListener('click', function () {
+                        halamanAktif = halaman;
+                        render();
+                    });
+                    li.appendChild(btn);
+                    ul.appendChild(li);
+                }
+
+                buatTombol('«', halamanAktif - 1, halamanAktif <= 1, false);
+                for (var i = 1; i <= totalHalaman; i++) {
+                    buatTombol(i, i, false, i === halamanAktif);
+                }
+                buatTombol('»', halamanAktif + 1, halamanAktif >= totalHalaman, false);
+
+                kontainerPage.appendChild(ul);
+            }
+        }
+
+        input.addEventListener('input', function () {
+            halamanAktif = 1; // reset ke halaman 1 tiap kali kata kunci berubah
+            render();
+        });
+
+        render(); // tampilan awal
+    })();
+</script>
+
+<script>
+    // ================== jam berjalan real-time ==================
     const hariIndoFE = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', "Jum'at", 'Sabtu'];
     const bulanIndoFE = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
